@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Cardapio {
+  id           String   @id @default(uuid())
+  titulo       String   @db.VarChar(100)
+  checkin      DateTime @db.Date
+  checkout     DateTime @db.Date
+  adultos      Int
+  criancas     Int      @default(0)
+  restricoes   String[] @default([])
+  preferencias String?  @db.VarChar(500)
+  geradoPorIA  Boolean  @default(false) @map("gerado_por_ia")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  refeicoes    Refeicao[]
+  listaCompras ListaCompras?
+
+  @@index([createdAt(sort: Desc)])
+  @@index([checkin, checkout])
+  @@map("cardapios")
+}
+
+model Refeicao {
+  id         String       @id @default(uuid())
+  cardapioId String       @map("cardapio_id")
+  data       DateTime     @db.Date
+  tipo       TipoRefeicao
+  pratos     String[]     @default([])
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  cardapio Cardapio @relation(fields: [cardapioId], references: [id], onDelete: Cascade)
+
+  @@unique([cardapioId, data, tipo])
+  @@index([cardapioId, data])
+  @@map("refeicoes")
+}
+
+model Prato {
+  id           String         @id @default(uuid())
+  nome         String         @unique @db.VarChar(100)
+  categoria    CategoriaPrato
+  porcoes      Int            @default(1)
+  tempoPreparo Int?           @map("tempo_preparo")
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  ingredientes Ingrediente[]
+
+  @@index([categoria])
+  @@map("pratos")
+}
+
+model Ingrediente {
+  id         String               @id @default(uuid())
+  pratoId    String               @map("prato_id")
+  nome       String               @db.VarChar(100)
+  quantidade Decimal              @db.Decimal(10, 2)
+  unidade    String               @db.VarChar(20)
+  categoria  CategoriaIngrediente
+
+  prato Prato @relation(fields: [pratoId], references: [id], onDelete: Cascade)
+
+  @@index([pratoId])
+  @@index([categoria])
+  @@map("ingredientes")
+}
+
+model ListaCompras {
+  id         String   @id @default(uuid())
+  cardapioId String   @unique @map("cardapio_id")
+  itens      Json     @default("[]") @db.JsonB
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  cardapio Cardapio @relation(fields: [cardapioId], references: [id], onDelete: Cascade)
+
+  @@map("listas_compras")
+}
+
+enum TipoRefeicao {
+  CAFE
+  ALMOCO
+  JANTAR
+}
+
+enum CategoriaPrato {
+  CAFE_MANHA
+  ALMOCO
+  JANTAR
+  SOBREMESA
+  LANCHE
+}
+
+enum CategoriaIngrediente {
+  HORTIFRUTI
+  PROTEINA
+  LATICINIO
+  GRAOS
+  TEMPERO
+  BEBIDA
+  CONGELADO
+  PADARIA
+  HIGIENE
+  OUTROS
+}
