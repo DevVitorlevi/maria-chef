@@ -35,8 +35,7 @@ model Refeicao {
   tipo       TipoRefeicao
   pratos     String[]     @default([])
   createdAt  DateTime     @default(now()) @map("created_at")
-
-  cardapio Cardapio @relation(fields: [cardapioId], references: [id], onDelete: Cascade)
+  cardapio   Cardapio     @relation(fields: [cardapioId], references: [id], onDelete: Cascade)
 
   @@unique([cardapioId, data, tipo])
   @@index([cardapioId, data])
@@ -47,10 +46,7 @@ model Prato {
   id           String         @id @default(uuid())
   nome         String         @unique @db.VarChar(100)
   categoria    CategoriaPrato
-  porcoes      Int            @default(1)
-  tempoPreparo Int?           @map("tempo_preparo")
   createdAt    DateTime       @default(now()) @map("created_at")
-
   ingredientes Ingrediente[]
 
   @@index([categoria])
