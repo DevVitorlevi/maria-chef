@@ -14,7 +14,8 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
+    // Remova esta linha:
+    // "rootDir": "./src",
     "removeComments": true,
     "noEmit": false,
     "importHelpers": true,
@@ -46,29 +47,29 @@
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
     "exactOptionalPropertyTypes": true,
-    /* Paths (opcional - para aliases) */
-    "baseUrl": "./src",
+    /* Paths */
+    "baseUrl": ".",
     "paths": {
       "@/*": [
-        "./*"
+        "./src/*"
       ],
       "@controllers/*": [
-        "http/controllers/*"
+        "./src/http/controllers/*"
       ],
       "@services/*": [
-        "services/*"
+        "./src/services/*"
       ],
       "@repositories/*": [
-        "repositories/*"
+        "./src/repositories/*"
       ],
       "@lib/*": [
-        "lib/*"
+        "./src/lib/*"
       ],
       "@utils/*": [
-        "utils/*"
+        "./src/utils/*"
       ],
       "@middlewares/*": [
-        "http/middlewares/*"
+        "./src/http/middlewares/*"
       ]
     },
     /* Types */
@@ -79,7 +80,7 @@
   },
   "include": [
     "src/**/*",
-    "tests/**/*"
+    "test/**/*"
   ],
   "exclude": [
     "node_modules",
