@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: docker
       POSTGRES_PASSWORD: docker
-      POSTGRES_DB: findafriend
+      POSTGRES_DB: maria_chef
     ports:
       - "5432:5432"
     volumes:
@@ -19,7 +19,7 @@ services:
     environment:
       POSTGRES_USER: docker
       POSTGRES_PASSWORD: docker
-      POSTGRES_DB: findafriend_test
+      POSTGRES_DB: maria_chef_test
     ports:
       - "5433:5432"
     volumes:
