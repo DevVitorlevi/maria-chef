@@ -1,6 +1,7 @@
 import cors from "@fastify/cors";
 import fastify from "fastify";
 import z, { ZodError } from "zod";
+import { dishRoutes } from "./http/routes/dish.routes";
 export const app = fastify();
 
 
@@ -9,6 +10,8 @@ app.register(cors, {
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
 });
+
+app.register(dishRoutes)
 
 app.setErrorHandler((error, _, reply) => {
   if (error instanceof ZodError) {
