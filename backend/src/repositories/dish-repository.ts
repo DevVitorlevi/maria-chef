@@ -1,4 +1,4 @@
-import type { Prisma, Prato, Ingrediente } from "@/generated/prisma/client";
+import type { Ingrediente, Prato, Prisma } from "@/generated/prisma/client";
 
 export type DishWithIngredients = Prato & {
   ingredientes: Ingrediente[];
@@ -6,4 +6,5 @@ export type DishWithIngredients = Prato & {
 
 export interface DishRepository {
   create(data: Prisma.PratoCreateInput): Promise<DishWithIngredients>;
+  findAll(): Promise<Prato[]>
 }

@@ -1,10 +1,7 @@
-import { randomUUID } from "node:crypto"
 import { Ingrediente, Prato, Prisma } from "@/generated/prisma/client"
-import type { DishRepository } from "@/repositories/dish-repository"
+import type { DishRepository, DishWithIngredients } from "@/repositories/dish-repository"
+import { randomUUID } from "node:crypto"
 
-type DishWithIngredients = Prato & {
-  ingredientes: Ingrediente[]
-}
 
 export class InMemoryDishRepository implements DishRepository {
   public database: Prato[] = []
@@ -47,4 +44,8 @@ export class InMemoryDishRepository implements DishRepository {
       ingredientes: createdIngredients,
     }
   }
+  async findAll(): Promise<Prato[]> {
+    return this.database
+  }
+
 }
