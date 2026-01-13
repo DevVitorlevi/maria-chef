@@ -37,4 +37,17 @@ export class PrismaDishRepository implements DishRepository {
     })
     return pratos
   }
+  async findById(id: string): Promise<DishWithIngredients | null> {
+    const prato = await prisma.prato.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        ingredientes: true
+      }
+    })
+
+    return prato
+  }
+
 }

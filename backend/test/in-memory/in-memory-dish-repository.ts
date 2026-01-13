@@ -67,4 +67,21 @@ export class InMemoryDishRepository implements DishRepository {
 
     return result
   }
+
+  async findById(id: string): Promise<DishWithIngredients | null> {
+    const prato = this.database.find(prato => prato.id === id)
+
+    if (!prato) {
+      return null
+    }
+
+    const ingredientes = this.ingredients.filter(
+      ingrediente => ingrediente.pratoId === prato.id
+    )
+
+    return {
+      ...prato,
+      ingredientes,
+    }
+  }
 }
