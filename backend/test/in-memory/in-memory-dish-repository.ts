@@ -1,7 +1,11 @@
-import { Ingrediente, Prato, Prisma } from "@/generated/prisma/client"
+import { Ingrediente, Prato, Prisma, type CategoriaPrato } from "@/generated/prisma/client"
 import type { DishRepository, DishWithIngredients } from "@/repositories/dish-repository"
 import { randomUUID } from "node:crypto"
 
+interface FindAllByFilters {
+  nome?: string,
+  categoria?: CategoriaPrato
+}
 
 export class InMemoryDishRepository implements DishRepository {
   public database: Prato[] = []
@@ -44,8 +48,23 @@ export class InMemoryDishRepository implements DishRepository {
       ingredientes: createdIngredients,
     }
   }
-  async findAll(): Promise<Prato[]> {
-    return this.database
-  }
 
+  async findAll(params?: FindAllByFilters): Promise<Prato[]> {
+    let result = this.database
+
+    if (params?.nome) {
+      const nomeLowerCase = params.nome.toLowerCase()
+      result = result.filter(prato =>
+        prato.nome.toLowerCase().includes(nomeLowerCase)
+      )
+    }
+
+    if (params?.categoria) {
+      result = result.filter(prato =>
+        prato.categoria === params.categoria
+      )
+    }
+
+    return result
+  }
 }
