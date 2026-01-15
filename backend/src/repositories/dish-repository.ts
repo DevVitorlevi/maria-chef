@@ -11,4 +11,9 @@ export interface DishRepository {
   create(data: Prisma.PratoCreateInput): Promise<DishWithIngredients>;
   findAll(params?: FindAllByFilters): Promise<Prato[]>
   findById(id: string): Promise<DishWithIngredients | null>
+  update(
+    id: string,
+    data: Prisma.PratoUpdateInput
+  ): Promise<DishWithIngredients>
+
 }
