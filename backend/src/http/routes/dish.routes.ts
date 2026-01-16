@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { create } from "../controllers/dish/create";
+import { duplicate } from "../controllers/dish/duplicate";
 import { findAll } from "../controllers/dish/findAll";
 import { findById } from "../controllers/dish/findById";
 import { update } from "../controllers/dish/update";
@@ -9,4 +10,5 @@ export function dishRoutes(app: FastifyInstance) {
   app.get("/dish", findAll)
   app.get("/dish/:id", findById)
   app.put("/dish/:id", update)
+  app.post("/dish/:dishId/duplicate", duplicate)
 }
