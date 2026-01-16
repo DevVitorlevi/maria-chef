@@ -63,4 +63,53 @@ export class PrismaDishRepository implements DishRepository {
       },
     });
   }
+  async duplicate(
+    id: string,
+    data?: Prisma.PratoUpdateInput
+  ): Promise<DishWithIngredients> {
+    const pratoOriginal = await prisma.prato.findUnique({
+      where: { id },
+      include: {
+        ingredientes: true,
+      },
+    });
+
+    if (!pratoOriginal) {
+      throw new Error("Prato não encontrado");
+    }
+
+    const nomeDuplicado = `${pratoOriginal.nome} (cópia)`;
+
+    const nomeAtualizado = data?.nome
+      ? typeof data.nome === 'object' && 'set' in data.nome
+        ? data.nome.set
+        : data.nome
+      : undefined;
+
+    const categoriaAtualizada = data?.categoria
+      ? typeof data.categoria === 'object' && 'set' in data.categoria
+        ? data.categoria.set
+        : data.categoria
+      : undefined;
+
+    const pratoDuplicado = await prisma.prato.create({
+      data: {
+        nome: (nomeAtualizado as string) ?? nomeDuplicado,
+        categoria: (categoriaAtualizada as CategoriaPrato) ?? pratoOriginal.categoria,
+        ingredientes: {
+          create: pratoOriginal.ingredientes.map((ingrediente) => ({
+            nome: ingrediente.nome,
+            quantidade: ingrediente.quantidade,
+            unidade: ingrediente.unidade,
+            categoria: ingrediente.categoria,
+          })),
+        },
+      },
+      include: {
+        ingredientes: true,
+      },
+    });
+
+    return pratoDuplicado;
+  }
 }

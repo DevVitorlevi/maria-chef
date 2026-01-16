@@ -15,5 +15,5 @@ export interface DishRepository {
     id: string,
     data: Prisma.PratoUpdateInput
   ): Promise<DishWithIngredients>
-  delete(id)
+  duplicate(id: string, data: Prisma.PratoUpdateInput): Promise<DishWithIngredients>
 }

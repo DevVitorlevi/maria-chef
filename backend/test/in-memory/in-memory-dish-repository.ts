@@ -191,4 +191,50 @@ export class InMemoryDishRepository implements DishRepository {
     }
   }
 
+  async duplicate(
+    id: string,
+    data: Prisma.PratoUpdateInput
+  ): Promise<DishWithIngredients> {
+    const pratoOriginal = await this.findById(id)
+
+    if (!pratoOriginal) {
+      throw new Error("Prato não encontrado")
+    }
+
+    const nomeDuplicado = `${pratoOriginal.nome} (cópia)`
+    const nomeAtualizado = resolveUpdateValue<string>(data.nome)
+    const categoriaAtualizada = resolveUpdateValue<CategoriaPrato>(data.categoria)
+
+
+    const pratoDuplicado: Prato = {
+      id: randomUUID(),
+      nome: nomeAtualizado ?? nomeDuplicado,
+      categoria: categoriaAtualizada ?? pratoOriginal.categoria,
+      createdAt: new Date(),
+    }
+
+    this.database.push(pratoDuplicado)
+
+    const ingredientesDuplicados: Ingrediente[] = []
+
+    for (const ingredienteOriginal of pratoOriginal.ingredientes) {
+      const ingredienteDuplicado: Ingrediente = {
+        id: randomUUID(),
+        pratoId: pratoDuplicado.id,
+        nome: ingredienteOriginal.nome,
+        quantidade: ingredienteOriginal.quantidade,
+        unidade: ingredienteOriginal.unidade,
+        categoria: ingredienteOriginal.categoria,
+      }
+
+      this.ingredients.push(ingredienteDuplicado)
+      ingredientesDuplicados.push(ingredienteDuplicado)
+    }
+
+    return {
+      ...pratoDuplicado,
+      ingredientes: ingredientesDuplicados,
+    }
+  }
+
 }
