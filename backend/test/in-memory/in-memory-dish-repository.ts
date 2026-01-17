@@ -8,6 +8,7 @@ import type {
   DishRepository,
   DishWithIngredients,
 } from "@/repositories/dish-repository"
+import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import { randomUUID } from "node:crypto"
 
 interface FindAllByFilters {
@@ -235,6 +236,16 @@ export class InMemoryDishRepository implements DishRepository {
       ...pratoDuplicado,
       ingredientes: ingredientesDuplicados,
     }
+  }
+
+  async delete(id: string) {
+    const dishIndex = this.database.findIndex(dish => dish.id === id)
+
+    if (dishIndex === -1) {
+      throw new ResourceNotFoundError()
+    }
+
+    this.database.splice(dishIndex, 1)
   }
 
 }
