@@ -1,4 +1,4 @@
-import { Prisma, type CategoriaIngrediente, type Ingrediente } from "@/generated/prisma/client"
+import { type CategoriaIngrediente, type Ingrediente } from "@/generated/prisma/client"
 
 export interface CreateIngredientDTO {
   nome: string
