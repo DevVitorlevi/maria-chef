@@ -2,6 +2,7 @@ import cors from "@fastify/cors";
 import fastify from "fastify";
 import z, { ZodError } from "zod";
 import { dishRoutes } from "./http/routes/dish.routes";
+import { ingredientroutes } from "./http/routes/ingredient.routes";
 export const app = fastify();
 
 
@@ -12,7 +13,7 @@ app.register(cors, {
 });
 
 app.register(dishRoutes)
-
+app.register(ingredientroutes)
 app.setErrorHandler((error, _, reply) => {
   if (error instanceof ZodError) {
     return reply.status(400).send({
