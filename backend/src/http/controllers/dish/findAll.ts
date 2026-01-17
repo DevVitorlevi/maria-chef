@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 
 import { CategoriaPrato } from "@/generated/prisma/enums";
-import { makeFindAllDishesUseCase } from "@/use-cases/factories/make-find-all-dishes-use-case";
+import { makeFindAllDishesUseCase } from "@/use-cases/factories/dish/make-find-all-dishes-use-case";
 
 export async function findAll(
   request: FastifyRequest,

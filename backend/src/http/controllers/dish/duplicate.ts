@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 
-import { makeDuplicateDishUseCase } from "@/use-cases/factories/make-duplicate-dish-use-case";
+import { makeDuplicateDishUseCase } from "@/use-cases/factories/dish/make-duplicate-dish-use-case";
 
 export async function duplicate(
   request: FastifyRequest,

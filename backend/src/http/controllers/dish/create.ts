@@ -1,8 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 
-import { CategoriaPrato, CategoriaIngrediente } from "@/generated/prisma/enums";
-import { makeCreateDishUseCase } from "@/use-cases/factories/make-create-dish-use-case";
+import { CategoriaIngrediente, CategoriaPrato } from "@/generated/prisma/enums";
+import { makeCreateDishUseCase } from "@/use-cases/factories/dish/make-create-dish-use-case";
 
 export async function create(
   request: FastifyRequest,

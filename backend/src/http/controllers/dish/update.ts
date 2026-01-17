@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 
 import { CategoriaIngrediente, CategoriaPrato } from "@/generated/prisma/enums";
-import { makeUpdateDishUseCase } from "@/use-cases/factories/make-update-dish-use-case";
+import { makeUpdateDishUseCase } from "@/use-cases/factories/dish/make-update-dish-use-case";
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
 
 export async function update(

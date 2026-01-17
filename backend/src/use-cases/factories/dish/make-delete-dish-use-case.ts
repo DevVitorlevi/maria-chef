@@ -1,5 +1,5 @@
 import { PrismaDishRepository } from "@/repositories/prisma/prisma-dish-repository";
-import { DeleteDishUseCase } from "../dish/delete";
+import { DeleteDishUseCase } from "../../dish/delete";
 
 export function makeDeleteDishUseCase() {
   const prismaDishRepository = new PrismaDishRepository()

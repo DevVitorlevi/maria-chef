@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 
-import { makeDeleteDishUseCase } from "@/use-cases/factories/make-delete-dish-use-case";
+import { makeDeleteDishUseCase } from "@/use-cases/factories/dish/make-delete-dish-use-case";
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
 
 export async function deleteDish(

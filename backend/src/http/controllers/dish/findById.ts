@@ -1,4 +1,4 @@
-import { makeFindByIdUseCase } from "@/use-cases/factories/make-find-by-id-use-case";
+import { makeFindByIdUseCase } from "@/use-cases/factories/dish/make-find-by-id-use-case";
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
