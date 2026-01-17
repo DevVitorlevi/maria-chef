@@ -112,4 +112,12 @@ export class PrismaDishRepository implements DishRepository {
 
     return pratoDuplicado;
   }
+
+  async delete(id: string) {
+    await prisma.prato.delete({
+      where: {
+        id
+      }
+    })
+  }
 }
