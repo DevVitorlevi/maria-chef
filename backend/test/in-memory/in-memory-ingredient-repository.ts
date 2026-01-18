@@ -23,4 +23,28 @@ export class InMemoryIngredientRepository implements IngredientRepository {
     return ingredient
   }
 
+  async update(
+    dishId: string,
+    ingredientId: string,
+    data: CreateIngredientDTO
+  ): Promise<Ingrediente | null> {
+    const ingredient = this.ingredients.find(
+      ingredient =>
+        ingredient.id === ingredientId &&
+        ingredient.pratoId === dishId
+    )
+
+    if (!ingredient) {
+      return null
+    }
+
+    ingredient.nome = data.nome
+    ingredient.quantidade = new Decimal(data.quantidade)
+    ingredient.unidade = data.unidade
+    ingredient.categoria = data.categoria
+
+    return ingredient
+  }
+
+
 }
