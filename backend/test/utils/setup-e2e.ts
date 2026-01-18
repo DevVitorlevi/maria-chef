@@ -1,14 +1,20 @@
-import { app } from '@/app.js'
-
+import { app } from '@/app'
+import { prisma } from '@/lib/prisma'
 import { resetDatabase } from './reset-database'
-import type { FastifyInstance } from 'fastify'
 
-export async function setupE2ETest(): Promise<FastifyInstance> {
-  await app.ready()
+let isSetup = false
+export async function setupE2E() {
+  if (!isSetup) {
+    await app.ready()
+    isSetup = true
+  }
+
   await resetDatabase()
   return app
 }
 
-export async function teardownE2ETest() {
+
+export async function teardownE2E() {
+  await prisma.$disconnect()
   await app.close()
 }
