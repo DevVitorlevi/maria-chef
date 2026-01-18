@@ -13,4 +13,15 @@ export class PrismaIngredientRepository implements IngredientRepository {
       },
     })
   }
+
+  async update(dishId: string, ingredientId: string, data: CreateIngredientDTO) {
+    return await prisma.ingrediente.update({
+      where: {
+        id: ingredientId,
+        pratoId: dishId
+      },
+      data
+    })
+  }
+
 }
