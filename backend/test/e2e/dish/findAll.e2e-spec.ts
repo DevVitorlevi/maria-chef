@@ -1,25 +1,16 @@
-import request from "supertest";
-import { describe, it, beforeAll, afterAll, beforeEach, expect } from "vitest";
-
-import { app } from "@/app";
-import { prisma } from "@/lib/prisma";
 import { CategoriaPrato } from "@/generated/prisma/enums";
-import { resetDatabase } from "test/utils/reset-database";
+import request from "supertest";
 import { createDish } from "test/utils/create-dish";
+import { beforeEach, describe, expect, it } from "vitest";
+import { setupE2E } from '../../utils/setup-e2e';
 
 describe("Find All Dishes (E2E)", () => {
-  beforeAll(async () => {
-    await app.ready();
-  });
+  let app: Awaited<ReturnType<typeof setupE2E>>
 
   beforeEach(async () => {
-    await resetDatabase();
-  });
+    app = await setupE2E()
+  })
 
-  afterAll(async () => {
-    await prisma.$disconnect();
-    await app.close();
-  });
 
   it("should be able to list all dishes", async () => {
     await createDish(app);

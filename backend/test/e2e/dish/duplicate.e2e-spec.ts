@@ -1,24 +1,15 @@
-import { app } from "@/app";
 import { CategoriaIngrediente, CategoriaPrato } from "@/generated/prisma/enums";
-import { prisma } from "@/lib/prisma";
 import request from "supertest";
-import { resetDatabase } from "test/utils/reset-database";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { createDish } from "../../utils/create-dish";
+import { setupE2E } from '../../utils/setup-e2e';
 
 describe("Duplicate Dish (e2e)", () => {
-  beforeAll(async () => {
-    await app.ready();
-  });
+  let app: Awaited<ReturnType<typeof setupE2E>>
 
   beforeEach(async () => {
-    await resetDatabase();
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
-    await app.close();
-  });
+    app = await setupE2E()
+  })
 
   it("should be able to duplicate a dish", async () => {
     const createResponse = await createDish(app, {

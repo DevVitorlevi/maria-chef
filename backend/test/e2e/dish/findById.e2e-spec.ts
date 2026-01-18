@@ -1,24 +1,16 @@
-import { app } from "@/app"
-import { prisma } from "@/lib/prisma"
-import { CategoriaIngrediente, CategoriaPrato } from "@/generated/prisma/client"
-import request from "supertest"
-import { afterAll, beforeAll, describe, expect, it } from "vitest"
-import { createDish } from "../../utils/create-dish"
+import { CategoriaIngrediente, CategoriaPrato } from "@/generated/prisma/client";
+import request from "supertest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { createDish } from "../../utils/create-dish";
+import { setupE2E } from '../../utils/setup-e2e';
 
 describe("Find By Id Dish (E2E)", () => {
-  beforeAll(async () => {
-    await app.ready()
+  let app: Awaited<ReturnType<typeof setupE2E>>
 
-    await prisma.ingrediente.deleteMany()
-    await prisma.prato.deleteMany()
+  beforeEach(async () => {
+    app = await setupE2E()
   })
 
-  afterAll(async () => {
-    await prisma.ingrediente.deleteMany()
-    await prisma.prato.deleteMany()
-    await prisma.$disconnect()
-    await app.close()
-  })
 
   it("should be able to find a dish with ingredients", async () => {
     const createResponse = await createDish(app)

@@ -1,23 +1,14 @@
-import { app } from "@/app";
-import { prisma } from "@/lib/prisma";
 import request from "supertest";
 import { createDish } from "test/utils/create-dish";
-import { resetDatabase } from "test/utils/reset-database";
-import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
+import { beforeEach, describe, it } from "vitest";
+import { setupE2E } from '../../utils/setup-e2e';
 
 describe("Delete Dish (E2E)", () => {
-  beforeAll(async () => {
-    await app.ready();
-  });
+  let app: Awaited<ReturnType<typeof setupE2E>>
 
   beforeEach(async () => {
-    await resetDatabase();
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
-    await app.close();
-  });
+    app = await setupE2E()
+  })
 
   it("should be able to delete a dish and yours all ingredients", async () => {
     const createdDish = await createDish(app)

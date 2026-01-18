@@ -1,69 +1,59 @@
-import request from "supertest";
-import { describe, it, beforeAll, afterAll, beforeEach, expect } from "vitest";
+import request from 'supertest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
-import { app } from "@/app";
-import { prisma } from "@/lib/prisma";
-import { CategoriaPrato, CategoriaIngrediente } from "@/generated/prisma/enums";
-import { resetDatabase } from "test/utils/reset-database";
+import { CategoriaIngrediente, CategoriaPrato } from '@/generated/prisma/enums'
+import { setupE2E } from '../../utils/setup-e2e'
 
-describe("Create Dish (E2E)", () => {
-  beforeAll(async () => {
-    await app.ready();
-  });
+describe('Create Dish (E2E)', () => {
+  let app: Awaited<ReturnType<typeof setupE2E>>
 
   beforeEach(async () => {
-    await resetDatabase();
-  });
+    app = await setupE2E()
+  })
 
-  afterAll(async () => {
-    await prisma.$disconnect();
-    await app.close();
-  });
-
-  it("should create a dish with ingredients", async () => {
+  it('should create a dish with ingredients', async () => {
     const response = await request(app.server)
-      .post("/dish")
+      .post('/dish')
       .send({
-        nome: "Pizza Margherita",
+        nome: 'Pizza Margherita',
         categoria: CategoriaPrato.LANCHE,
         ingredientes: [
           {
-            nome: "Farinha",
+            nome: 'Farinha',
             quantidade: 1,
-            unidade: "kg",
+            unidade: 'kg',
             categoria: CategoriaIngrediente.OUTROS,
           },
           {
-            nome: "Tomate",
+            nome: 'Tomate',
             quantidade: 3,
-            unidade: "un",
+            unidade: 'un',
             categoria: CategoriaIngrediente.HORTIFRUTI,
           },
         ],
-      });
+      })
 
-    expect(response.status).toBe(201);
-
+    expect(response.status).toBe(201)
     expect(response.body).toEqual(
       expect.objectContaining({
         id: expect.any(String),
-        nome: "Pizza Margherita",
+        nome: 'Pizza Margherita',
         categoria: CategoriaPrato.LANCHE,
         ingredientes: expect.arrayContaining([
           expect.objectContaining({
-            nome: "Farinha",
-            quantidade: "1",
-            unidade: "kg",
+            nome: 'Farinha',
+            quantidade: '1',
+            unidade: 'kg',
             categoria: CategoriaIngrediente.OUTROS,
           }),
           expect.objectContaining({
-            nome: "Tomate",
-            quantidade: "3",
-            unidade: "un",
+            nome: 'Tomate',
+            quantidade: '3',
+            unidade: 'un',
             categoria: CategoriaIngrediente.HORTIFRUTI,
           }),
         ]),
       })
-    );
-  });
-});
+    )
+  })
+})

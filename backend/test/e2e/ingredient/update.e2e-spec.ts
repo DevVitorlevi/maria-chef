@@ -1,24 +1,14 @@
-import { app } from "@/app"
-import { CategoriaIngrediente } from "@/generated/prisma/enums"
-import { prisma } from "@/lib/prisma"
-import request from "supertest"
-import { resetDatabase } from "test/utils/reset-database"
-import { afterAll, beforeAll, describe, expect, it } from "vitest"
-import { createDish } from "../../utils/create-dish"
-
+import { CategoriaIngrediente } from "@/generated/prisma/enums";
+import request from "supertest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { createDish } from "../../utils/create-dish";
+import { setupE2E } from '../../utils/setup-e2e';
 describe("Update Ingredient (E2E)", () => {
-  beforeAll(async () => {
-    await app.ready();
-  });
+  let app: Awaited<ReturnType<typeof setupE2E>>
 
   beforeEach(async () => {
-    await resetDatabase();
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
-    await app.close();
-  });
+    app = await setupE2E()
+  })
 
 
   it("should be able update an ingredient for an existing dish", async () => {

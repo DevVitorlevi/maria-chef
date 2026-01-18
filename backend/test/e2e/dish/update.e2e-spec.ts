@@ -1,24 +1,16 @@
-import { app } from "@/app";
 import { CategoriaIngrediente, CategoriaPrato } from "@/generated/prisma/enums";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { createDish } from "../../utils/create-dish";
-import { resetDatabase } from "test/utils/reset-database";
-import { prisma } from "@/lib/prisma";
+import { setupE2E } from '../../utils/setup-e2e';
 
 describe("Update Dish (e2e)", () => {
-  beforeAll(async () => {
-    await app.ready();
-  });
+  let app: Awaited<ReturnType<typeof setupE2E>>
 
   beforeEach(async () => {
-    await resetDatabase();
-  });
+    app = await setupE2E()
+  })
 
-  afterAll(async () => {
-    await prisma.$disconnect();
-    await app.close();
-  });
 
   it("should be able to update a dish", async () => {
     const createResponse = await createDish(app, {
