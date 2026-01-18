@@ -8,4 +8,5 @@ export interface CreateIngredientDTO {
 }
 export interface IngredientRepository {
   create(dishId: string, ingredient: CreateIngredientDTO): Promise<Ingrediente>
+  update(dishId: string, ingredientId: string, data: CreateIngredientDTO): Promise<Ingrediente | null>
 }
