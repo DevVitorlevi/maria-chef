@@ -8,6 +8,7 @@
     "build": "tsup src --out-dir build",
     "test": "vitest run --config ./vitest.config.ts",
     "test:watch": "vitest --config ./vitest.config.ts",
+    "test:e2e:prepare": "dotenv -e .env.test -- npx prisma migrate deploy",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "test:e2e:watch": "vitest --config ./vitest.config.e2e.ts"
   },
@@ -30,6 +31,7 @@
     "@types/node": "^25.0.6",
     "@types/supertest": "^6.0.3",
     "@vitest/ui": "^4.0.16",
+    "dotenv-cli": "^11.0.0",
     "prisma": "^7.2.0",
     "supertest": "^7.2.2",
     "tsconfig-paths": "^4.2.0",
