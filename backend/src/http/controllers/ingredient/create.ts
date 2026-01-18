@@ -1,5 +1,5 @@
 import { CategoriaIngrediente } from "@/generated/prisma/enums";
-import { makeCreateIngredientUseCase } from "@/use-cases/factories/make-create-ingredient-use-case";
+import { makeCreateIngredientUseCase } from "@/use-cases/factories/ingredient/make-create-ingredient-use-case";
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import z from "zod";
