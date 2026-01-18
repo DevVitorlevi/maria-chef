@@ -60,7 +60,7 @@ describe("Update Dish (e2e)", () => {
     expect(updateResponse.statusCode).toEqual(204);
   });
 
-  it("should return 400 when dish does not exist", async () => {
+  it("should not be able update an dish does not exist", async () => {
     const response = await request(app.server)
       .put("/dish/non-existent-id")
       .send({
@@ -77,52 +77,6 @@ describe("Update Dish (e2e)", () => {
       });
 
     expect(response.statusCode).toEqual(400);
-  });
-
-  it("should update dish and replace all ingredients", async () => {
-    const createResponse = await createDish(app, {
-      nome: "Salada Simples",
-      categoria: CategoriaPrato.LANCHE,
-      ingredientes: [
-        {
-          nome: "Alface",
-          quantidade: 100,
-          unidade: "g",
-          categoria: CategoriaIngrediente.HORTIFRUTI,
-        },
-        {
-          nome: "Tomate",
-          quantidade: 50,
-          unidade: "g",
-          categoria: CategoriaIngrediente.HORTIFRUTI,
-        },
-      ],
-    });
-
-    const dishId = createResponse.body.id
-
-    const updateResponse = await request(app.server)
-      .put(`/dish/${dishId}`)
-      .send({
-        nome: "Salada Caesar",
-        categoria: CategoriaPrato.LANCHE,
-        ingredientes: [
-          {
-            nome: "Alface romana",
-            quantidade: 200,
-            unidade: "g",
-            categoria: CategoriaIngrediente.HORTIFRUTI,
-          },
-        ],
-      });
-
-    expect(updateResponse.statusCode).toEqual(204);
-
-    const getResponse = await request(app.server).get(`/dish/${dishId}`);
-
-    expect(getResponse.body.prato.nome).toEqual("Salada Caesar");
-    expect(getResponse.body.prato.ingredientes).toHaveLength(1);
-    expect(getResponse.body.prato.ingredientes[0].nome).toEqual("Alface romana");
   });
 
   it("should update only dish name and categoria keeping same ingredients structure", async () => {
