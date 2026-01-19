@@ -23,5 +23,14 @@ export class PrismaIngredientRepository implements IngredientRepository {
       data
     })
   }
+  async delete(dishId: string, ingredientId: string) {
+    return await prisma.ingrediente.delete({
+      where: {
+        pratoId: dishId,
+        id: ingredientId
+      }
+    })
+  }
+
 
 }
