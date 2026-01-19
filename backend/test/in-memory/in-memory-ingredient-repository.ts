@@ -2,6 +2,7 @@ import {
   Ingrediente,
 } from "@/generated/prisma/client"
 import type { CreateIngredientDTO, IngredientRepository } from "@/repositories/ingredient-repository"
+import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import { Decimal } from "@prisma/client/runtime/client"
 import { randomUUID } from "node:crypto"
 
@@ -45,6 +46,16 @@ export class InMemoryIngredientRepository implements IngredientRepository {
 
     return ingredient
   }
+  async delete(dishId: string, ingredientId: string) {
+    const ingredientIndex = this.ingredients.findIndex(
+      ingredient => ingredient.id === ingredientId && ingredient.pratoId === dishId
+    )
 
+    if (ingredientIndex === -1) {
+      throw new ResourceNotFoundError()
+    }
+
+    this.ingredients.splice(ingredientIndex, 1)
+  }
 
 }
