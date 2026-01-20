@@ -8,7 +8,7 @@ import type {
   DishRepository,
   DishWithIngredients,
 } from "@/repositories/dish-repository"
-import type { CreateDishInput, FindAllDishesFiltersInput } from "@/repositories/DTOs/dish.dtos"
+import type { CreateDishInput, FindAllDishesFiltersInput, FindByIdDishParams } from "@/repositories/DTOs/dish.dtos"
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import { randomUUID } from "node:crypto"
 
@@ -38,7 +38,7 @@ export class InMemoryDishRepository implements DishRepository {
   public ingredients: Ingrediente[] = []
 
   async create(
-    data: CreateDishInput
+    data: CreateDishInput,
   ): Promise<Prato> {
     const prato: Prato = {
       id: randomUUID(),
@@ -76,9 +76,9 @@ export class InMemoryDishRepository implements DishRepository {
   }
 
   async findById(
-    id: string
+    { dishId }: FindByIdDishParams
   ): Promise<DishWithIngredients | null> {
-    const prato = this.database.find(p => p.id === id)
+    const prato = this.database.find(p => p.id === dishId)
 
     if (!prato) {
       return null
@@ -93,6 +93,7 @@ export class InMemoryDishRepository implements DishRepository {
       ingredientes,
     }
   }
+
 
   async update(
     id: string,

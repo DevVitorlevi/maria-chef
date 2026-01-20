@@ -1,7 +1,7 @@
 import type { CategoriaPrato, Prato, Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { DishRepository, DishWithIngredients } from "../dish-repository";
-import type { CreateDishInput, FindAllDishesFiltersInput } from "../DTOs/dish.dtos";
+import type { CreateDishInput, FindAllDishesFiltersInput, FindByIdDishParams } from "../DTOs/dish.dtos";
 export class PrismaDishRepository implements DishRepository {
   async create(
     data: CreateDishInput
@@ -29,17 +29,19 @@ export class PrismaDishRepository implements DishRepository {
     return pratos
   }
 
-  async findById(id: string): Promise<DishWithIngredients | null> {
-    const prato = await prisma.prato.findUnique({
+  async findById(
+    { dishId }: FindByIdDishParams
+  ) {
+    const dish = await prisma.prato.findUnique({
       where: {
-        id,
+        id: dishId
       },
       include: {
         ingredientes: true
       }
     })
 
-    return prato
+    return dish
   }
 
   async update(
