@@ -8,16 +8,11 @@ import type {
   DishRepository,
   DishWithIngredients,
 } from "@/repositories/dish-repository"
-import type { CreateDishInput } from "@/repositories/DTOs/dish/create-dish-input"
+import type { CreateDishInput, FindAllDishesFiltersInput } from "@/repositories/DTOs/dish.dtos"
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import { randomUUID } from "node:crypto"
 
-interface FindAllByFilters {
-  nome?: string
-  categoria?: CategoriaPrato
-}
 
-// Tipo corrigido: 'set' agora é opcional
 type PrismaUpdateValue<T> =
   | T
   | { set?: T }
@@ -60,7 +55,7 @@ export class InMemoryDishRepository implements DishRepository {
   }
 
   async findAll(
-    params?: FindAllByFilters
+    params?: FindAllDishesFiltersInput
   ): Promise<Prato[]> {
     let result = this.database
 
