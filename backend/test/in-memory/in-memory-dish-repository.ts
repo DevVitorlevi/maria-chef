@@ -8,6 +8,7 @@ import type {
   DishRepository,
   DishWithIngredients,
 } from "@/repositories/dish-repository"
+import type { CreateDishInput } from "@/repositories/DTOs/dish/create-dish-input"
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import { randomUUID } from "node:crypto"
 
@@ -42,8 +43,8 @@ export class InMemoryDishRepository implements DishRepository {
   public ingredients: Ingrediente[] = []
 
   async create(
-    data: Prisma.PratoCreateInput
-  ): Promise<DishWithIngredients> {
+    data: CreateDishInput
+  ): Promise<Prato> {
     const prato: Prato = {
       id: randomUUID(),
       nome: data.nome,
@@ -53,33 +54,8 @@ export class InMemoryDishRepository implements DishRepository {
 
     this.database.push(prato)
 
-    const createdIngredients: Ingrediente[] = []
-
-    if (data.ingredientes?.create) {
-      const ingredientesData = Array.isArray(data.ingredientes.create)
-        ? data.ingredientes.create
-        : [data.ingredientes.create]
-
-      for (const ingredienteData of ingredientesData) {
-        const ingrediente: Ingrediente = {
-          id: randomUUID(),
-          pratoId: prato.id,
-          nome: ingredienteData.nome,
-          quantidade: new Prisma.Decimal(
-            String(ingredienteData.quantidade)
-          ),
-          unidade: ingredienteData.unidade,
-          categoria: ingredienteData.categoria,
-        }
-
-        this.ingredients.push(ingrediente)
-        createdIngredients.push(ingrediente)
-      }
-    }
-
     return {
       ...prato,
-      ingredientes: createdIngredients,
     }
   }
 
