@@ -1,10 +1,9 @@
-import type { CategoriaPrato } from "@/generated/prisma/enums";
-
+import type { CategoriaIngrediente, CategoriaPrato } from "@/generated/prisma/enums";
+import type { Decimal } from "@prisma/client/runtime/client";
 export interface CreateDishInput {
   nome: string;
   categoria: CategoriaPrato;
 }
-
 export interface CreateDishOutput {
   dish: {
     id: string
@@ -13,7 +12,6 @@ export interface CreateDishOutput {
     createdAt: Date
   }
 }
-
 export interface FindAllDishesFiltersInput {
   nome?: string | undefined
   categoria?: CategoriaPrato | undefined
@@ -27,4 +25,23 @@ export interface FindAllDishesOutput {
     categoria: CategoriaPrato;
     createdAt: Date
   }[]
+}
+export interface FindByIdDishParams {
+  dishId: string
+}
+export interface FindByIdDishOutput {
+  dish: {
+    id: string
+    nome: string
+    categoria: CategoriaPrato
+    createdAt: Date
+    ingredientes: {
+      id: string
+      pratoId: string
+      nome: string
+      quantidade: Decimal
+      unidade: string
+      categoria: CategoriaIngrediente
+    }[]
+  }
 }
