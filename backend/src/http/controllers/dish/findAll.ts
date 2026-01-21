@@ -17,12 +17,12 @@ export async function findAll(
 
   const findAllDishesUseCase = makeFindAllDishesUseCase();
 
-  const { pratos } = await findAllDishesUseCase.execute({
+  const { dishes } = await findAllDishesUseCase.execute({
     nome,
     categoria,
   });
 
   return reply.status(200).send(
-    { pratos }
+    { dishes }
   );
 }

@@ -5,18 +5,18 @@ import z from "zod";
 
 export async function findById(request: FastifyRequest, reply: FastifyReply) {
   const findByIdDishParamsSchema = z.object({
-    id: z.string()
+    dishId: z.string()
   })
 
-  const { id } = findByIdDishParamsSchema.parse(request.params)
+  const { dishId } = findByIdDishParamsSchema.parse(request.params)
 
   try {
     const findByIdDishUseCase = makeFindByIdUseCase()
 
-    const { prato } = await findByIdDishUseCase.execute({ id })
+    const { dish } = await findByIdDishUseCase.execute({ dishId })
 
     return reply.status(200).send(
-      { prato }
+      { dish }
     )
   } catch (error) {
     if (error instanceof ResourceNotFoundError) {

@@ -1,11 +1,11 @@
 import { prisma } from '@/lib/prisma'
+import type { CreateIngredientInput, DeleteIngredientParams, UpdateIngredientInput, UpdateIngredientParams } from '../DTOs/ingredient.dtos'
 import type {
-  CreateIngredientDTO,
   IngredientRepository,
 } from '../ingredient-repository'
 
 export class PrismaIngredientRepository implements IngredientRepository {
-  async create(dishId: string, data: CreateIngredientDTO) {
+  async create(dishId: string, data: CreateIngredientInput) {
     return await prisma.ingrediente.create({
       data: {
         ...data,
@@ -14,23 +14,21 @@ export class PrismaIngredientRepository implements IngredientRepository {
     })
   }
 
-  async update(dishId: string, ingredientId: string, data: CreateIngredientDTO) {
+  async update(params: UpdateIngredientParams, data: UpdateIngredientInput) {
     return await prisma.ingrediente.update({
       where: {
-        id: ingredientId,
-        pratoId: dishId
+        id: params.ingredientId,
+        pratoId: params.dishId
       },
       data
     })
   }
-  async delete(dishId: string, ingredientId: string) {
+  async delete(params: DeleteIngredientParams) {
     return await prisma.ingrediente.delete({
       where: {
-        pratoId: dishId,
-        id: ingredientId
+        pratoId: params.dishId,
+        id: params.ingredientId
       }
     })
   }
-
-
 }

@@ -1,27 +1,18 @@
-import type { CategoriaPrato, Prato, Prisma } from "@/generated/prisma/client";
+import type { CategoriaPrato, Prato } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import type { DishRepository, DishWithIngredients } from "../dish-repository";
-
-interface FindAllByFilters {
-  nome?: string,
-  categoria?: CategoriaPrato
-}
-
+import type { DishRepository } from "../dish-repository";
+import type { CreateDishInput, DuplicateDishInput, FindAllDishesFiltersInput, FindByIdDishParams, UpdateDishInput } from "../DTOs/dish.dtos";
 export class PrismaDishRepository implements DishRepository {
   async create(
-    data: Prisma.PratoCreateInput
-  ): Promise<DishWithIngredients> {
+    data: CreateDishInput
+  ) {
     const prato = await prisma.prato.create({
       data,
-      include: {
-        ingredientes: true,
-      },
     });
-
     return prato;
   }
 
-  async findAll(filters?: FindAllByFilters): Promise<Prato[]> {
+  async findAll(filters?: FindAllDishesFiltersInput): Promise<Prato[]> {
     const pratos = await prisma.prato.findMany({
       where: {
         ...(filters?.nome && {
@@ -38,37 +29,36 @@ export class PrismaDishRepository implements DishRepository {
     return pratos
   }
 
-  async findById(id: string): Promise<DishWithIngredients | null> {
-    const prato = await prisma.prato.findUnique({
+  async findById(
+    { dishId }: FindByIdDishParams
+  ) {
+    const dish = await prisma.prato.findUnique({
       where: {
-        id,
+        id: dishId
       },
       include: {
         ingredientes: true
       }
     })
 
-    return prato
+    return dish
   }
 
   async update(
-    id: string,
-    data: Prisma.PratoUpdateInput
-  ): Promise<DishWithIngredients> {
+    dishId: string,
+    data: UpdateDishInput
+  ) {
     return prisma.prato.update({
-      where: { id },
+      where: { id: dishId },
       data,
-      include: {
-        ingredientes: true,
-      },
     });
   }
   async duplicate(
-    id: string,
-    data?: Prisma.PratoUpdateInput
-  ): Promise<DishWithIngredients> {
+    dishId: string,
+    data?: DuplicateDishInput
+  ) {
     const pratoOriginal = await prisma.prato.findUnique({
-      where: { id },
+      where: { id: dishId },
       include: {
         ingredientes: true,
       },
@@ -82,13 +72,13 @@ export class PrismaDishRepository implements DishRepository {
 
     const nomeAtualizado = data?.nome
       ? typeof data.nome === 'object' && 'set' in data.nome
-        ? data.nome.set
+        ? data.nome
         : data.nome
       : undefined;
 
     const categoriaAtualizada = data?.categoria
       ? typeof data.categoria === 'object' && 'set' in data.categoria
-        ? data.categoria.set
+        ? data.categoria
         : data.categoria
       : undefined;
 

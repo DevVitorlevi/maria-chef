@@ -1,13 +1,8 @@
-import { type CategoriaIngrediente, type Ingrediente } from "@/generated/prisma/client"
+import { type Ingrediente } from "@/generated/prisma/client"
+import type { CreateIngredientInput, DeleteIngredientParams, UpdateIngredientInput, UpdateIngredientParams } from "./DTOs/ingredient.dtos"
 
-export interface CreateIngredientDTO {
-  nome: string
-  quantidade: number
-  unidade: string
-  categoria: CategoriaIngrediente
-}
 export interface IngredientRepository {
-  create(dishId: string, ingredient: CreateIngredientDTO): Promise<Ingrediente>
-  update(dishId: string, ingredientId: string, data: CreateIngredientDTO): Promise<Ingrediente | null>
-  delete(dishId: string, ingredientId: string): void
+  create(dishId: string, ingredient: CreateIngredientInput): Promise<Ingrediente>
+  update(params: UpdateIngredientParams, data: UpdateIngredientInput): void
+  delete(params: DeleteIngredientParams): void
 }

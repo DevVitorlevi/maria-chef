@@ -22,8 +22,8 @@ describe("Find All Dishes (E2E)", () => {
     const response = await request(app.server).get("/dish").send();
 
     expect(response.status).toBe(200);
-    expect(response.body.pratos).toHaveLength(2);
-    expect(response.body.pratos).toEqual(
+    expect(response.body.dishes).toHaveLength(2);
+    expect(response.body.dishes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           id: expect.any(String),
@@ -50,8 +50,8 @@ describe("Find All Dishes (E2E)", () => {
       .send();
 
     expect(response.status).toBe(200);
-    expect(response.body.pratos).toHaveLength(2);
-    expect(response.body.pratos).toEqual(
+    expect(response.body.dishes).toHaveLength(2);
+    expect(response.body.dishes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ nome: "Pizza Margherita" }),
         expect.objectContaining({ nome: "Pizza Calabresa" }),
@@ -79,8 +79,8 @@ describe("Find All Dishes (E2E)", () => {
       .send();
 
     expect(response.status).toBe(200);
-    expect(response.body.pratos).toHaveLength(2);
-    expect(response.body.pratos).toEqual(
+    expect(response.body.dishes).toHaveLength(2);
+    expect(response.body.dishes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           nome: "Pizza",
@@ -117,8 +117,8 @@ describe("Find All Dishes (E2E)", () => {
       .send();
 
     expect(response.status).toBe(200);
-    expect(response.body.pratos).toHaveLength(1);
-    expect(response.body.pratos[0]).toEqual(
+    expect(response.body.dishes).toHaveLength(1);
+    expect(response.body.dishes[0]).toEqual(
       expect.objectContaining({
         nome: "Pizza de Feijoada",
         categoria: CategoriaPrato.ALMOCO,
@@ -138,13 +138,13 @@ describe("Find All Dishes (E2E)", () => {
       .send();
 
     expect(response.status).toBe(200);
-    expect(response.body.pratos).toHaveLength(0);
+    expect(response.body.dishes).toHaveLength(0);
   });
 
   it("should return empty array when there are no dishes", async () => {
     const response = await request(app.server).get("/dish").send();
 
     expect(response.status).toBe(200);
-    expect(response.body.pratos).toHaveLength(0);
+    expect(response.body.dishes).toHaveLength(0);
   });
 });

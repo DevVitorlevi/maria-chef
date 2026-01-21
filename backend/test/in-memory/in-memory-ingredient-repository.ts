@@ -1,7 +1,8 @@
 import {
   Ingrediente,
 } from "@/generated/prisma/client"
-import type { CreateIngredientDTO, IngredientRepository } from "@/repositories/ingredient-repository"
+import type { CreateIngredientInput, DeleteIngredientParams, UpdateIngredientInput, UpdateIngredientParams } from "@/repositories/DTOs/ingredient.dtos"
+import type { IngredientRepository } from "@/repositories/ingredient-repository"
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import { Decimal } from "@prisma/client/runtime/client"
 import { randomUUID } from "node:crypto"
@@ -9,7 +10,13 @@ import { randomUUID } from "node:crypto"
 export class InMemoryIngredientRepository implements IngredientRepository {
   public ingredients: Ingrediente[] = []
 
-  async create(dishId: string, data: CreateIngredientDTO): Promise<Ingrediente> {
+  constructor(sharedIngredients?: Ingrediente[]) {
+    if (sharedIngredients) {
+      this.ingredients = sharedIngredients
+    }
+  }
+
+  async create(dishId: string, data: CreateIngredientInput): Promise<Ingrediente> {
     const ingredient: Ingrediente = {
       id: randomUUID(),
       nome: data.nome,
@@ -25,14 +32,13 @@ export class InMemoryIngredientRepository implements IngredientRepository {
   }
 
   async update(
-    dishId: string,
-    ingredientId: string,
-    data: CreateIngredientDTO
-  ): Promise<Ingrediente | null> {
+    params: UpdateIngredientParams,
+    data: UpdateIngredientInput
+  ) {
     const ingredient = this.ingredients.find(
       ingredient =>
-        ingredient.id === ingredientId &&
-        ingredient.pratoId === dishId
+        ingredient.id === params.ingredientId &&
+        ingredient.pratoId === params.dishId
     )
 
     if (!ingredient) {
@@ -46,9 +52,10 @@ export class InMemoryIngredientRepository implements IngredientRepository {
 
     return ingredient
   }
-  async delete(dishId: string, ingredientId: string) {
+
+  async delete(params: DeleteIngredientParams) {
     const ingredientIndex = this.ingredients.findIndex(
-      ingredient => ingredient.id === ingredientId && ingredient.pratoId === dishId
+      ingredient => ingredient.id === params.ingredientId && ingredient.pratoId === params.dishId
     )
 
     if (ingredientIndex === -1) {
@@ -57,5 +64,4 @@ export class InMemoryIngredientRepository implements IngredientRepository {
 
     this.ingredients.splice(ingredientIndex, 1)
   }
-
 }
