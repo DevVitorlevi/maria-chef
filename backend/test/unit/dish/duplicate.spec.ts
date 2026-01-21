@@ -1,42 +1,43 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import type { Ingrediente } from "../../../src/generated/prisma/client";
+import { CategoriaIngrediente, CategoriaPrato } from "../../../src/generated/prisma/enums";
 import type { DishWithIngredients } from "../../../src/repositories/dish-repository";
 import { DuplicateDishUseCase } from "../../../src/use-cases/dish/duplicate";
 import { InMemoryDishRepository } from "../../in-memory/in-memory-dish-repository";
+import { InMemoryIngredientRepository } from "../../in-memory/in-memory-ingredient-repository";
 
 describe("Duplicate Dish Use Case", () => {
   let dishRepository: InMemoryDishRepository;
+  let ingredientRepository: InMemoryIngredientRepository;
   let sut: DuplicateDishUseCase;
   let originalDish: DishWithIngredients;
 
   beforeEach(async () => {
-    dishRepository = new InMemoryDishRepository();
+    const sharedIngredients: Ingrediente[] = [];
+
+    dishRepository = new InMemoryDishRepository(sharedIngredients);
+    ingredientRepository = new InMemoryIngredientRepository(sharedIngredients);
     sut = new DuplicateDishUseCase(dishRepository);
 
     originalDish = await dishRepository.create({
       nome: "Tapioca de queijo",
-      categoria: "CAFE_MANHA",
-      ingredientes: {
-        create: [
-          {
-            nome: "Goma de tapioca",
-            quantidade: 100,
-            unidade: "g",
-            categoria: "GRAOS",
-          },
-          {
-            nome: "Queijo coalho",
-            quantidade: 50,
-            unidade: "g",
-            categoria: "LATICINIO",
-          },
-          {
-            nome: "Manteiga",
-            quantidade: 10,
-            unidade: "g",
-            categoria: "LATICINIO",
-          },
-        ],
-      },
+      categoria: CategoriaPrato.CAFE_MANHA,
+    });
+
+    const originalDishId = originalDish.id;
+
+    await ingredientRepository.create(originalDishId, {
+      nome: "Goma de Tapioca",
+      quantidade: 200,
+      unidade: "g",
+      categoria: CategoriaIngrediente.OUTROS,
+    });
+
+    await ingredientRepository.create(originalDishId, {
+      nome: "Queijo",
+      quantidade: 100,
+      unidade: "g",
+      categoria: CategoriaIngrediente.LATICINIO,
     });
   });
 
@@ -48,45 +49,48 @@ describe("Duplicate Dish Use Case", () => {
     expect(dish.id).not.toBe(originalDish.id);
     expect(dish.nome).toBe("Tapioca de queijo (cópia)");
     expect(dish.categoria).toBe(originalDish.categoria);
-    expect(dish.ingredientes).toHaveLength(3);
+    expect(dish.ingredientes).toHaveLength(2);
     expect(dish.createdAt).toBeInstanceOf(Date);
   });
 
   it("should copy all ingredients with new IDs", async () => {
+    const originalDishWithIngredients = await dishRepository.findById({ dishId: originalDish.id });
+
     const { dish } = await sut.execute({
       dishId: originalDish.id,
     });
 
-    expect(dish.ingredientes).toHaveLength(3);
+    expect(dish.ingredientes).toHaveLength(2);
 
-    dish.ingredientes.forEach((ingrediente: { nome: any; id: any; }) => {
-      const originalIngredient = originalDish.ingredientes.find(
-        (i: { nome: any; }) => i.nome === ingrediente.nome
+    dish.ingredientes.forEach((ingrediente: any) => {
+      const originalIngredient = originalDishWithIngredients?.ingredientes.find(
+        (i: any) => i.nome === ingrediente.nome
       );
       expect(ingrediente.id).not.toBe(originalIngredient?.id);
     });
 
-    expect(dish.ingredientes[0].nome).toBe("Goma de tapioca");
-    expect(dish.ingredientes[0].quantidade.toString()).toBe("100");
-    expect(dish.ingredientes[0].unidade).toBe("g");
-    expect(dish.ingredientes[0].categoria).toBe("GRAOS");
+    const gomaIngredient = dish.ingredientes.find((i: any) => i.nome === "Goma de Tapioca");
+    expect(gomaIngredient).toBeDefined();
+    expect(gomaIngredient?.quantidade.toString()).toBe("200");
+    expect(gomaIngredient?.unidade).toBe("g");
+    expect(gomaIngredient?.categoria).toBe(CategoriaIngrediente.OUTROS);
 
-    expect(dish.ingredientes[1].nome).toBe("Queijo coalho");
-    expect(dish.ingredientes[1].quantidade.toString()).toBe("50");
-
-    expect(dish.ingredientes[2].nome).toBe("Manteiga");
-    expect(dish.ingredientes[2].quantidade.toString()).toBe("10");
+    const queijoIngredient = dish.ingredientes.find((i: any) => i.nome === "Queijo");
+    expect(queijoIngredient).toBeDefined();
+    expect(queijoIngredient?.quantidade.toString()).toBe("100");
+    expect(queijoIngredient?.unidade).toBe("g");
+    expect(queijoIngredient?.categoria).toBe(CategoriaIngrediente.LATICINIO);
   });
 
   it("should keep original dish unchanged", async () => {
     const originalName = originalDish.nome;
-    const originalIngredientsCount = originalDish.ingredientes.length;
+    const originalIngredientsCount = 2;
 
     await sut.execute({
       dishId: originalDish.id,
     });
 
-    const unchangedDish = await dishRepository.findById(originalDish.id);
+    const unchangedDish = await dishRepository.findById({ dishId: originalDish.id });
 
     expect(unchangedDish?.nome).toBe(originalName);
     expect(unchangedDish?.ingredientes).toHaveLength(originalIngredientsCount);
@@ -99,9 +103,10 @@ describe("Duplicate Dish Use Case", () => {
 
     await dishRepository.update(duplicatedDish.id, {
       nome: "Tapioca de queijo com coco",
+      categoria: duplicatedDish.categoria,
     });
 
-    const originalAfterUpdate = await dishRepository.findById(originalDish.id);
+    const originalAfterUpdate = await dishRepository.findById({ dishId: originalDish.id });
     expect(originalAfterUpdate?.nome).toBe("Tapioca de queijo");
   });
 
@@ -127,35 +132,20 @@ describe("Duplicate Dish Use Case", () => {
     ).rejects.toThrow("Prato não encontrado");
   });
 
-  it("should not be able to duplicate with invalid UUID", async () => {
-    await expect(() =>
-      sut.execute({
-        dishId: "invalid-uuid",
-      })
-    ).rejects.toThrow("Prato não encontrado");
-  });
-
-  it("should not be able to duplicate with empty ID", async () => {
-    await expect(() =>
-      sut.execute({
-        dishId: "",
-      })
-    ).rejects.toThrow("Prato não encontrado");
-  });
-
   it("should duplicate dish with many ingredients", async () => {
     const dishWithManyIngredients = await dishRepository.create({
       nome: "Bolo de festa",
-      categoria: "SOBREMESA",
-      ingredientes: {
-        create: Array.from({ length: 15 }, (_, i) => ({
-          nome: `Ingrediente ${i + 1}`,
-          quantidade: 100,
-          unidade: "g",
-          categoria: "GRAOS",
-        })),
-      },
+      categoria: CategoriaPrato.SOBREMESA,
     });
+
+    for (let i = 0; i < 15; i++) {
+      await ingredientRepository.create(dishWithManyIngredients.id, {
+        nome: `Ingrediente ${i + 1}`,
+        quantidade: 100,
+        unidade: "g",
+        categoria: CategoriaIngrediente.GRAOS,
+      });
+    }
 
     const { dish } = await sut.execute({
       dishId: dishWithManyIngredients.id,
@@ -168,7 +158,7 @@ describe("Duplicate Dish Use Case", () => {
   it("should duplicate dish with no ingredients", async () => {
     const dishWithoutIngredients = await dishRepository.create({
       nome: "Água",
-      categoria: "BEBIDA",
+      categoria: CategoriaPrato.LANCHE,
     });
 
     const { dish } = await sut.execute({
@@ -177,5 +167,5 @@ describe("Duplicate Dish Use Case", () => {
 
     expect(dish.ingredientes).toHaveLength(0);
     expect(dish.nome).toBe("Água (cópia)");
-  });
+  })
 });

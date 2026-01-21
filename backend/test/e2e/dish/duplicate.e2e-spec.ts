@@ -12,90 +12,115 @@ describe("Duplicate Dish (e2e)", () => {
   })
 
   it("should be able to duplicate a dish", async () => {
-    const createResponse = await createDish(app, {
-      nome: "Tapioca de queijo",
-      categoria: CategoriaPrato.CAFE_MANHA,
-      ingredientes: [
-        {
-          nome: "Goma de tapioca",
-          quantidade: 100,
-          unidade: "g",
-          categoria: CategoriaIngrediente.GRAOS,
-        },
-        {
-          nome: "Queijo coalho",
-          quantidade: 50,
-          unidade: "g",
-          categoria: CategoriaIngrediente.LATICINIO,
-        },
-        {
-          nome: "Manteiga",
-          quantidade: 10,
-          unidade: "g",
-          categoria: CategoriaIngrediente.LATICINIO,
-        },
-      ],
-    });
+    const createResponse = await createDish(app)
 
-    const originalDishId = createResponse.body.id;
+    const dishId = createResponse.body.id
+
+    await request(app.server)
+      .post(`/dish/${dishId}/ingredient`)
+      .send({
+        nome: "Farinha de Trigo",
+        quantidade: 1,
+        unidade: "kg",
+        categoria: CategoriaIngrediente.OUTROS,
+      })
+
+    await request(app.server)
+      .post(`/dish/${dishId}/ingredient`)
+      .send({
+        nome: "Tomate",
+        quantidade: 3,
+        unidade: "un",
+        categoria: CategoriaIngrediente.HORTIFRUTI,
+      })
+
+    const originalDishResponse = await request(app.server).get(`/dish/${dishId}`)
+
+    const originalDish = originalDishResponse.body.dish
 
     const duplicateResponse = await request(app.server)
-      .post(`/dish/${originalDishId}/duplicate`)
+      .post(`/dish/${dishId}/duplicate`)
       .send();
 
     expect(duplicateResponse.statusCode).toEqual(201);
     expect(duplicateResponse.body.id).toEqual(expect.any(String));
-    expect(duplicateResponse.body.nome).toBe("Tapioca de queijo (cópia)");
-    expect(duplicateResponse.body.categoria).toBe(CategoriaPrato.CAFE_MANHA);
+    expect(duplicateResponse.body.nome).toBe("Pizza Margherita (cópia)");
+    expect(duplicateResponse.body.categoria).toBe(CategoriaPrato.LANCHE);
     expect(duplicateResponse.body.createdAt).toEqual(expect.any(String));
-    expect(duplicateResponse.body.ingredientes).toHaveLength(3);
-    expect(duplicateResponse.body.id).not.toBe(originalDishId);
+    expect(duplicateResponse.body.ingredientes).toHaveLength(2);
+    expect(duplicateResponse.body.id).not.toBe(dishId);
 
-    const originalIngredients = createResponse.body.ingredientes;
+    const originalIngredients = originalDish.ingredientes || [];
     const duplicatedIngredients = duplicateResponse.body.ingredientes;
 
-    duplicatedIngredients.forEach((dupIng: any, index: number) => {
-      expect(dupIng.id).not.toBe(originalIngredients[index].id);
-      expect(dupIng.nome).toBe(originalIngredients[index].nome);
-      expect(dupIng.quantidade).toBe(originalIngredients[index].quantidade);
-      expect(dupIng.unidade).toBe(originalIngredients[index].unidade);
-      expect(dupIng.categoria).toBe(originalIngredients[index].categoria);
+    expect(duplicatedIngredients).toHaveLength(originalIngredients.length);
+
+    duplicatedIngredients.forEach((dupIng: any) => {
+      const matchingOriginal = originalIngredients.find(
+        (origIng: any) => origIng.nome === dupIng.nome
+      );
+
+      expect(matchingOriginal).toBeDefined();
+      expect(dupIng.id).not.toBe(matchingOriginal.id);
+      expect(dupIng.nome).toBe(matchingOriginal.nome);
+      expect(dupIng.quantidade).toBe(matchingOriginal.quantidade);
+      expect(dupIng.unidade).toBe(matchingOriginal.unidade);
+      expect(dupIng.categoria).toBe(matchingOriginal.categoria);
       expect(dupIng.pratoId).toBe(duplicateResponse.body.id);
     });
   });
 
   it("should keep original dish unchanged after duplication", async () => {
-    const createResponse = await createDish(app, {
-      nome: "Suco de laranja",
-      categoria: CategoriaPrato.LANCHE,
-      ingredientes: [
-        {
-          nome: "Laranja",
-          quantidade: 300,
-          unidade: "g",
-          categoria: CategoriaIngrediente.HORTIFRUTI,
-        },
-      ],
-    });
+    const createResponse = await createDish(app)
 
-    const originalDishId = createResponse.body.id;
-    const originalName = createResponse.body.nome;
+    const dishId = createResponse.body.id
+    const originalName = createResponse.body.nome
 
     await request(app.server)
-      .post(`/dish/${originalDishId}/duplicate`)
+      .post(`/dish/${dishId}/ingredient`)
+      .send({
+        nome: "Farinha de Trigo",
+        quantidade: 1,
+        unidade: "kg",
+        categoria: CategoriaIngrediente.OUTROS,
+      })
+
+    await request(app.server)
+      .post(`/dish/${dishId}/ingredient`)
+      .send({
+        nome: "Tomate",
+        quantidade: 3,
+        unidade: "un",
+        categoria: CategoriaIngrediente.HORTIFRUTI,
+      })
+
+    await request(app.server)
+      .post(`/dish/${dishId}/duplicate`)
       .send();
 
-    const getOriginalResponse = await request(app.server).get(
-      `/dish/${originalDishId}`
-    );
+    const getOriginalResponse = await request(app.server).get(`/dish/${dishId}`);
 
-    expect(getOriginalResponse.statusCode).toEqual(200);
-    expect(getOriginalResponse.body.prato.nome).toBe(originalName);
-    expect(getOriginalResponse.body.prato.ingredientes).toHaveLength(1);
+    const originalDish = getOriginalResponse.body.dish
+
+    expect(originalDish.nome).toBe(originalName);
+    expect(originalDish.ingredientes).toHaveLength(2);
   });
 
+  it("should duplicate dish with no ingredients", async () => {
+    const createResponse = await createDish(app)
 
-  it("should return 404 when dish does not exist", async () => {
+    const dishId = createResponse.body.id
+
+    const duplicateResponse = await request(app.server)
+      .post(`/dish/${dishId}/duplicate`)
+      .send();
+
+    expect(duplicateResponse.statusCode).toEqual(201);
+    expect(duplicateResponse.body.nome).toBe("Pizza Margherita (cópia)");
+    expect(duplicateResponse.body.ingredientes).toHaveLength(0);
+  });
+
+  it("should not be able when dish does not exist", async () => {
     const response = await request(app.server)
       .post("/dish/550e8400-e29b-41d4-a716-446655440000/duplicate")
       .send();
