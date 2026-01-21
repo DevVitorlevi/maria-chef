@@ -45,3 +45,9 @@ export interface FindByIdDishOutput {
     }[]
   }
 }
+
+export interface UpdateDishInput {
+  nome: string;
+  categoria: CategoriaPrato;
+}
+
