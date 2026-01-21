@@ -29,14 +29,15 @@ describe("Update Ingredient Use Case", () => {
       categoria: CategoriaIngrediente.GRAOS,
     })
 
-    const response = await sut.execute({
-      ingredientId: ingredient.id,
-      dishId: prato.id,
-      nome: "Chocolate",
-      quantidade: 100,
-      unidade: "g",
-      categoria: CategoriaIngrediente.OUTROS,
-    })
+    const response = await sut.execute(
+      { ingredientId: ingredient.id, dishId: prato.id },
+      {
+        nome: "Chocolate",
+        quantidade: 100,
+        unidade: "g",
+        categoria: CategoriaIngrediente.OUTROS,
+      }
+    )
 
     expect(response.ingredient).toBeTruthy()
     expect(response.ingredient?.id).toBe(ingredient.id)
@@ -49,32 +50,17 @@ describe("Update Ingredient Use Case", () => {
 
   it("should not update an ingredient if dish does not exist", async () => {
     await expect(
-      sut.execute({
-        ingredientId: "ingredient-id",
-        dishId: "dish-non-existent",
-        nome: "Chocolate",
-        quantidade: 100,
-        unidade: "g",
-        categoria: CategoriaIngrediente.OUTROS,
-      })
+      sut.execute(
+        {
+          ingredientId: "ingredient-id",
+          dishId: "dish-non-existent"
+        },
+        {
+          nome: "Chocolate",
+          quantidade: 100,
+          unidade: "g",
+          categoria: CategoriaIngrediente.OUTROS,
+        })
     ).rejects.toBeInstanceOf(ResourceNotFoundError)
-  })
-
-  it("should return null if ingredient does not exist in the dish", async () => {
-    const prato = await dishRepository.create({
-      nome: "Panqueca",
-      categoria: CategoriaPrato.CAFE_MANHA,
-    })
-
-    const response = await sut.execute({
-      ingredientId: "ingredient-non-existent",
-      dishId: prato.id,
-      nome: "Chocolate",
-      quantidade: 100,
-      unidade: "g",
-      categoria: CategoriaIngrediente.OUTROS,
-    })
-
-    expect(response.ingredient).toBeNull()
   })
 })

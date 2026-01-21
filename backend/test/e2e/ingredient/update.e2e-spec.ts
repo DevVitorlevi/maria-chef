@@ -10,17 +10,24 @@ describe("Update Ingredient (E2E)", () => {
     app = await setupE2E()
   })
 
-
   it("should be able update an ingredient for an existing dish", async () => {
     const createdDish = await createDish(app)
-
-    const response = await request(app.server)
-      .put(`/dish/${createdDish.body.id}/ingredient/${createdDish.body.ingredientes[1].id}`)
+    const ingredient = await await request(app.server)
+      .post(`/dish/${createdDish.body.id}/ingredient`)
       .send({
-        nome: "Queijo",
+        nome: "Farinha de Rosca",
         quantidade: 200,
         unidade: "g",
-        categoria: CategoriaIngrediente.LATICINIO,
+        categoria: CategoriaIngrediente.OUTROS,
+      })
+
+    const response = await request(app.server)
+      .put(`/dish/${createdDish.body.id}/ingredient/${ingredient.body.ingredient.id}`)
+      .send({
+        nome: "Farinha de Trigo",
+        quantidade: 200,
+        unidade: "g",
+        categoria: CategoriaIngrediente.OUTROS,
       })
 
     expect(response.statusCode).toBe(204)
@@ -37,7 +44,6 @@ describe("Update Ingredient (E2E)", () => {
         unidade: "g",
         categoria: CategoriaIngrediente.LATICINIO,
       })
-
 
     expect(response.statusCode).toBe(400)
 
