@@ -1,7 +1,7 @@
 import {
   Ingrediente,
 } from "@/generated/prisma/client"
-import type { CreateIngredientInput } from "@/repositories/DTOs/ingredient.dtos"
+import type { CreateIngredientInput, UpdateIngredientInput, UpdateIngredientParams } from "@/repositories/DTOs/ingredient.dtos"
 import type { IngredientRepository } from "@/repositories/ingredient-repository"
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import { Decimal } from "@prisma/client/runtime/client"
@@ -32,14 +32,13 @@ export class InMemoryIngredientRepository implements IngredientRepository {
   }
 
   async update(
-    dishId: string,
-    ingredientId: string,
-    data: CreateIngredientInput
-  ): Promise<Ingrediente | null> {
+    params: UpdateIngredientParams,
+    data: UpdateIngredientInput
+  ) {
     const ingredient = this.ingredients.find(
       ingredient =>
-        ingredient.id === ingredientId &&
-        ingredient.pratoId === dishId
+        ingredient.id === params.ingredientId &&
+        ingredient.pratoId === params.dishId
     )
 
     if (!ingredient) {
