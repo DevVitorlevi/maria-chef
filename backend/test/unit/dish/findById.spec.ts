@@ -18,25 +18,6 @@ describe("Find By Id Dish Use Case", () => {
       categoria: CategoriaPrato.ALMOCO,
     })
 
-    await dishRepository.update(createdDish.id, {
-      ingredientes: {
-        create: [
-          {
-            nome: "Feijão preto",
-            quantidade: 500,
-            unidade: "g",
-            categoria: "GRAOS",
-          },
-          {
-            nome: "Linguiça",
-            quantidade: 300,
-            unidade: "g",
-            categoria: "PROTEINA",
-          },
-        ],
-      },
-    })
-
     const { dish } = await sut.execute({ dishId: createdDish.id })
 
     expect(dish.id).toBe(createdDish.id)
