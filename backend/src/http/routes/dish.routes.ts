@@ -10,7 +10,7 @@ export function dishRoutes(app: FastifyInstance) {
   app.post("/dish", create)
   app.get("/dish", findAll)
   app.get("/dish/:dishId", findById)
-  app.put("/dish/:id", update)
+  app.put("/dish/:dishId", update)
   app.post("/dish/:dishId/duplicate", duplicate)
   app.delete("/dish/:id/delete", deleteDish)
 }
