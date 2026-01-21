@@ -22,12 +22,12 @@ export async function create(request: FastifyRequest, reply: FastifyReply) {
   try {
     const createIngredientUseCase = makeCreateIngredientUseCase()
 
-    const { ingredient } = await createIngredientUseCase.execute({
+
+    const { ingredient } = await createIngredientUseCase.execute(dishId, {
       nome,
       quantidade,
       unidade,
       categoria,
-      dishId
     })
 
     return reply.status(201).send({
