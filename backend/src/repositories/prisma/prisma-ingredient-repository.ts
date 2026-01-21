@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import type { CreateIngredientInput, UpdateIngredientInput, UpdateIngredientParams } from '../DTOs/ingredient.dtos'
+import type { CreateIngredientInput, DeleteIngredientParams, UpdateIngredientInput, UpdateIngredientParams } from '../DTOs/ingredient.dtos'
 import type {
   IngredientRepository,
 } from '../ingredient-repository'
@@ -23,11 +23,11 @@ export class PrismaIngredientRepository implements IngredientRepository {
       data
     })
   }
-  async delete(dishId: string, ingredientId: string) {
+  async delete(params: DeleteIngredientParams) {
     return await prisma.ingrediente.delete({
       where: {
-        pratoId: dishId,
-        id: ingredientId
+        pratoId: params.dishId,
+        id: params.ingredientId
       }
     })
   }

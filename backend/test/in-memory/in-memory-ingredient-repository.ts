@@ -1,7 +1,7 @@
 import {
   Ingrediente,
 } from "@/generated/prisma/client"
-import type { CreateIngredientInput, UpdateIngredientInput, UpdateIngredientParams } from "@/repositories/DTOs/ingredient.dtos"
+import type { CreateIngredientInput, DeleteIngredientParams, UpdateIngredientInput, UpdateIngredientParams } from "@/repositories/DTOs/ingredient.dtos"
 import type { IngredientRepository } from "@/repositories/ingredient-repository"
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import { Decimal } from "@prisma/client/runtime/client"
@@ -53,9 +53,9 @@ export class InMemoryIngredientRepository implements IngredientRepository {
     return ingredient
   }
 
-  async delete(dishId: string, ingredientId: string) {
+  async delete(params: DeleteIngredientParams) {
     const ingredientIndex = this.ingredients.findIndex(
-      ingredient => ingredient.id === ingredientId && ingredient.pratoId === dishId
+      ingredient => ingredient.id === params.ingredientId && ingredient.pratoId === params.dishId
     )
 
     if (ingredientIndex === -1) {
