@@ -23,15 +23,18 @@ export async function update(request: FastifyRequest, reply: FastifyReply) {
   try {
     const updateIngredientUseCase = makeUpdateIngredientUseCase()
 
-    await updateIngredientUseCase.execute({
-      nome,
-      quantidade,
-      unidade,
-      categoria,
-      dishId,
-      ingredientId
-    })
-
+    await updateIngredientUseCase.execute(
+      {
+        dishId,
+        ingredientId
+      },
+      {
+        nome,
+        quantidade,
+        unidade,
+        categoria,
+      }
+    )
     return reply.status(204).send({
       message: "Updated Ingredient",
     })

@@ -18,3 +18,13 @@ export interface CreateIngredientOutput {
     categoria: CategoriaIngrediente
   }
 }
+export interface UpdateIngredientParams {
+  dishId: string,
+  ingredientId: string
+}
+export interface UpdateIngredientInput {
+  nome: string
+  quantidade: number
+  unidade: string
+  categoria: CategoriaIngrediente
+}
