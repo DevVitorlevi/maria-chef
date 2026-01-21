@@ -1,11 +1,11 @@
 import { prisma } from '@/lib/prisma'
 import type {
-  CreateIngredientDTO,
   IngredientRepository,
 } from '../ingredient-repository'
+import type { CreateIngredientInput } from '../DTOs/ingredient.dtos'
 
 export class PrismaIngredientRepository implements IngredientRepository {
-  async create(dishId: string, data: CreateIngredientDTO) {
+  async create(dishId: string, data: CreateIngredientInput) {
     return await prisma.ingrediente.create({
       data: {
         ...data,
@@ -14,7 +14,7 @@ export class PrismaIngredientRepository implements IngredientRepository {
     })
   }
 
-  async update(dishId: string, ingredientId: string, data: CreateIngredientDTO) {
+  async update(dishId: string, ingredientId: string, data: CreateIngredientInput) {
     return await prisma.ingrediente.update({
       where: {
         id: ingredientId,

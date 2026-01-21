@@ -1,7 +1,8 @@
 import {
   Ingrediente,
 } from "@/generated/prisma/client"
-import type { CreateIngredientDTO, IngredientRepository } from "@/repositories/ingredient-repository"
+import type { CreateIngredientInput } from "@/repositories/DTOs/ingredient.dtos"
+import type { IngredientRepository } from "@/repositories/ingredient-repository"
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import { Decimal } from "@prisma/client/runtime/client"
 import { randomUUID } from "node:crypto"
@@ -9,7 +10,7 @@ import { randomUUID } from "node:crypto"
 export class InMemoryIngredientRepository implements IngredientRepository {
   public ingredients: Ingrediente[] = []
 
-  async create(dishId: string, data: CreateIngredientDTO): Promise<Ingrediente> {
+  async create(dishId: string, data: CreateIngredientInput): Promise<Ingrediente> {
     const ingredient: Ingrediente = {
       id: randomUUID(),
       nome: data.nome,
@@ -27,7 +28,7 @@ export class InMemoryIngredientRepository implements IngredientRepository {
   async update(
     dishId: string,
     ingredientId: string,
-    data: CreateIngredientDTO
+    data: CreateIngredientInput
   ): Promise<Ingrediente | null> {
     const ingredient = this.ingredients.find(
       ingredient =>
@@ -57,5 +58,4 @@ export class InMemoryIngredientRepository implements IngredientRepository {
 
     this.ingredients.splice(ingredientIndex, 1)
   }
-
 }
