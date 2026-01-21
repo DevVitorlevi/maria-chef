@@ -8,7 +8,7 @@ export async function duplicate(
   reply: FastifyReply
 ) {
   const duplicateDishParamsSchema = z.object({
-    dishId: z.string().uuid({ message: "ID inválido" }),
+    dishId: z.string(),
   });
 
   const { dishId } = duplicateDishParamsSchema.parse(request.params);

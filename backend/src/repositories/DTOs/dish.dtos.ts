@@ -51,3 +51,36 @@ export interface UpdateDishInput {
   categoria: CategoriaPrato;
 }
 
+export interface DuplicateDishParams {
+  dishId: string
+}
+
+export interface DuplicateDishInput {
+  nome: string
+  categoria: CategoriaPrato
+  createdAt: Date
+  ingredientes: {
+    nome: string
+    quantidade: Decimal
+    unidade: string
+    categoria: CategoriaIngrediente
+  }
+}
+
+export interface DuplicateDishOutput {
+  dish: {
+    id: string
+    nome: string
+    categoria: CategoriaPrato
+    createdAt: Date
+    ingredientes: {
+      id: string
+      pratoId: string
+      nome: string
+      quantidade: Decimal
+      unidade: string
+      categoria: CategoriaIngrediente
+    }[]
+  }
+}
+
