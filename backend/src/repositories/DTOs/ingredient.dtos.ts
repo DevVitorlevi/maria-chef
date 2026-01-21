@@ -28,3 +28,8 @@ export interface UpdateIngredientInput {
   unidade: string
   categoria: CategoriaIngrediente
 }
+
+export interface DeleteIngredientParams {
+  dishId: string,
+  ingredientId: string
+}
