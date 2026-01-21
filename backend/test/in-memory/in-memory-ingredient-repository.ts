@@ -10,6 +10,12 @@ import { randomUUID } from "node:crypto"
 export class InMemoryIngredientRepository implements IngredientRepository {
   public ingredients: Ingrediente[] = []
 
+  constructor(sharedIngredients?: Ingrediente[]) {
+    if (sharedIngredients) {
+      this.ingredients = sharedIngredients
+    }
+  }
+
   async create(dishId: string, data: CreateIngredientInput): Promise<Ingrediente> {
     const ingredient: Ingrediente = {
       id: randomUUID(),
@@ -47,6 +53,7 @@ export class InMemoryIngredientRepository implements IngredientRepository {
 
     return ingredient
   }
+
   async delete(dishId: string, ingredientId: string) {
     const ingredientIndex = this.ingredients.findIndex(
       ingredient => ingredient.id === ingredientId && ingredient.pratoId === dishId

@@ -31,6 +31,4 @@ export class PrismaIngredientRepository implements IngredientRepository {
       }
     })
   }
-
-
 }

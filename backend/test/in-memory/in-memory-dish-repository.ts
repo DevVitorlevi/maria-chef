@@ -1,23 +1,32 @@
 import {
   Ingrediente,
   Prato,
-  Prisma,
-  type CategoriaPrato,
 } from "@/generated/prisma/client"
 import type {
   DishRepository,
   DishWithIngredients,
 } from "@/repositories/dish-repository"
-import type { CreateDishInput, FindAllDishesFiltersInput, FindByIdDishParams, UpdateDishInput } from "@/repositories/DTOs/dish.dtos"
+import type {
+  CreateDishInput,
+  DuplicateDishInput,
+  FindAllDishesFiltersInput,
+  FindByIdDishParams,
+  UpdateDishInput
+} from "@/repositories/DTOs/dish.dtos"
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import { randomUUID } from "node:crypto"
+
 export class InMemoryDishRepository implements DishRepository {
   public database: Prato[] = []
   public ingredients: Ingrediente[] = []
 
-  async create(
-    data: CreateDishInput,
-  ): Promise<Prato> {
+  constructor(sharedIngredients?: Ingrediente[]) {
+    if (sharedIngredients) {
+      this.ingredients = sharedIngredients
+    }
+  }
+
+  async create(data: CreateDishInput): Promise<Prato> {
     const prato: Prato = {
       id: randomUUID(),
       nome: data.nome,
@@ -32,9 +41,7 @@ export class InMemoryDishRepository implements DishRepository {
     }
   }
 
-  async findAll(
-    params?: FindAllDishesFiltersInput
-  ): Promise<Prato[]> {
+  async findAll(params?: FindAllDishesFiltersInput): Promise<Prato[]> {
     let result = this.database
 
     if (params?.nome) {
@@ -53,18 +60,16 @@ export class InMemoryDishRepository implements DishRepository {
     return result
   }
 
-  async findById(
-    { dishId }: FindByIdDishParams
-  ): Promise<DishWithIngredients | null> {
-    const prato = this.database.find(p => p.id === dishId)
+  async findById(params: FindByIdDishParams): Promise<DishWithIngredients | null> {
+    const dishId = typeof params === 'string' ? params : params.dishId
+
+    const prato = this.database.find((p) => p.id === dishId)
 
     if (!prato) {
       return null
     }
 
-    const ingredientes = this.ingredients.filter(
-      ingrediente => ingrediente.pratoId === prato.id
-    )
+    const ingredientes = this.ingredients.filter((i) => i.pratoId === dishId)
 
     return {
       ...prato,
@@ -72,14 +77,9 @@ export class InMemoryDishRepository implements DishRepository {
     }
   }
 
-  async update(
-    dishId: string,
-    data: UpdateDishInput
-  ) {
-    const dish = this.database.find(
-      dish =>
-        dish.id === dishId
-    )
+  async update(dishId: string, data: UpdateDishInput) {
+    const dish = this.database.find(dish => dish.id === dishId)
+
     if (!dish) {
       return null
     }
@@ -91,19 +91,18 @@ export class InMemoryDishRepository implements DishRepository {
   }
 
   async duplicate(
-    id: string,
-    data: Prisma.PratoUpdateInput
+    dishId: string,
+    data?: DuplicateDishInput
   ): Promise<DishWithIngredients> {
-    const pratoOriginal = await this.findById(id)
+    const pratoOriginal = await this.findById({ dishId })
 
     if (!pratoOriginal) {
       throw new Error("Prato não encontrado")
     }
 
     const nomeDuplicado = `${pratoOriginal.nome} (cópia)`
-    const nomeAtualizado = resolveUpdateValue<string>(data.nome)
-    const categoriaAtualizada = resolveUpdateValue<CategoriaPrato>(data.categoria)
-
+    const nomeAtualizado = data?.nome
+    const categoriaAtualizada = data?.categoria
 
     const pratoDuplicado: Prato = {
       id: randomUUID(),
@@ -145,5 +144,4 @@ export class InMemoryDishRepository implements DishRepository {
 
     this.database.splice(dishIndex, 1)
   }
-
 }
