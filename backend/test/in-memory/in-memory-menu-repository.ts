@@ -25,4 +25,14 @@ export class InMemoryMenuRepository implements MenuRepository {
     return menu
   }
 
+  async findById(menuId: string) {
+    const menu = await this.database.find((menu) => menu.id === menuId)
+
+    if (!menu) {
+      return null
+    }
+
+    return menu
+  }
+
 }

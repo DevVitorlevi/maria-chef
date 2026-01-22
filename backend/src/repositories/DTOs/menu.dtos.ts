@@ -1,3 +1,4 @@
+
 export interface CreateMenuInput {
   title: string
   checkIn: Date
@@ -11,11 +12,35 @@ export interface CreateMenuInput {
 export interface CreateMenuOutput {
   menu: {
     id: string
-    nome: string
-    checkIn: Date
-    checkOut: Date
-    adultos?: number
-    restricoes?: string[],
-    preferencias?: string
+    titulo: string
+    checkin: Date
+    checkout: Date
+    adultos: number
+    criancas: number
+    restricoes: string[]
+    preferencias: string | null
+    geradoPorIA: boolean
+    createdAt: Date
+    updatedAt: Date
+  }
+}
+
+export interface FindByIdMenuParams {
+  menuId: string
+}
+
+export interface FindByIdMenuOutput {
+  menu: {
+    id: string
+    titulo: string
+    checkin: Date
+    checkout: Date
+    adultos: number
+    criancas: number
+    restricoes: string[]
+    preferencias: string | null
+    geradoPorIA: boolean
+    createdAt: Date
+    updatedAt: Date
   }
 }

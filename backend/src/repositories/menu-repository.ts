@@ -3,4 +3,5 @@ import type { CreateMenuInput } from "./DTOs/menu.dtos";
 
 export interface MenuRepository {
   create(data: CreateMenuInput): Promise<Cardapio>
+  findById(menuId: string): Promise<Cardapio | null>
 }
