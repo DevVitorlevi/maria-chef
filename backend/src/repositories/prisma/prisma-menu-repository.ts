@@ -18,4 +18,14 @@ export class PrismaMenuRepository implements MenuRepository {
     })
     return menu
   }
+
+  async findById(menuId: string) {
+    const menu = await prisma.cardapio.findUnique({
+      where: {
+        id: menuId
+      }
+    })
+
+    return menu
+  }
 }
