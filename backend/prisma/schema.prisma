@@ -35,24 +35,12 @@ model Refeicao {
   tipo       TipoRefeicao
   createdAt  DateTime     @default(now()) @map("created_at")
 
-  cardapio Cardapio        @relation(fields: [cardapioId], references: [id], onDelete: Cascade)
-  pratos   RefeicaoPrato[]
+  cardapio Cardapio @relation(fields: [cardapioId], references: [id], onDelete: Cascade)
+  pratos   Prato[]  @relation("RefeicaoPratos")
 
   @@unique([cardapioId, data, tipo])
   @@index([cardapioId, data])
   @@map("refeicoes")
-}
-
-model RefeicaoPrato {
-  id         String @id @default(uuid())
-  refeicaoId String @map("refeicao_id")
-  pratoId    String @map("prato_id")
-
-  refeicao Refeicao @relation(fields: [refeicaoId], references: [id], onDelete: Cascade)
-  prato    Prato    @relation(fields: [pratoId], references: [id], onDelete: Cascade)
-
-  @@unique([refeicaoId, pratoId])
-  @@map("refeicoes_pratos")
 }
 
 model Prato {
@@ -62,7 +50,7 @@ model Prato {
   createdAt DateTime       @default(now()) @map("created_at")
 
   ingredientes Ingrediente[]
-  refeicoes    RefeicaoPrato[]
+  refeicoes    Refeicao[]    @relation("RefeicaoPratos")
 
   @@index([categoria])
   @@map("pratos")
