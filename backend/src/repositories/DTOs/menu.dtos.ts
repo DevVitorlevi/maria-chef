@@ -45,10 +45,10 @@ export interface FindByIdMenuOutput {
   }
 }
 export interface FindAllFiltersParams {
-  titulo?: string
-  data?: string
-  page?: number
-  limit?: number
+  titulo?: string | undefined
+  data?: string | undefined
+  page?: number | undefined
+  limit?: number | undefined
 }
 
 export interface FindAllMenusOutput {
