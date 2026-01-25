@@ -6,3 +6,8 @@ export interface CreateMealInput {
   type: TipoRefeicao
   dishes: string[]
 }
+
+export interface DeleteMealsParams {
+  id: string
+  menuId: string
+}
