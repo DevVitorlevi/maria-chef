@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import type { CreateMealInput } from "../DTOs/meal.dtos"
+import type { CreateMealInput, DeleteMealsParams } from "../DTOs/meal.dtos"
 import type { MealRepository } from "../meal-repository"
 
 export class PrismaMealRepository implements MealRepository {
@@ -21,5 +21,15 @@ export class PrismaMealRepository implements MealRepository {
     })
 
     return meal
+  }
+
+  async delete(params: DeleteMealsParams) {
+    return await prisma.refeicao.delete({
+      where: {
+        id: params.id,
+        cardapioId: params.menuId
+      }
+    })
+
   }
 }
