@@ -1,6 +1,7 @@
 import type { Prato, Refeicao } from "@/generated/prisma/client";
-import type { CreateMealInput } from "@/repositories/DTOs/meal.dtos";
+import type { CreateMealInput, DeleteMealsParams } from "@/repositories/DTOs/meal.dtos";
 import type { MealRepository } from "@/repositories/meal-repository";
+import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
 import { randomUUID } from "node:crypto";
 
 type RefeicaoWithPratos = Refeicao & {
@@ -48,5 +49,17 @@ export class InMemoryMealRepository implements MealRepository {
       ...meal,
       pratos
     }
+  }
+
+  async delete(params: DeleteMealsParams) {
+    const mealIndex = this.database.findIndex(
+      meal => meal.id === params.id && meal.cardapioId === params.menuId
+    )
+
+    if (mealIndex === -1) {
+      throw new ResourceNotFoundError()
+    }
+
+    this.database.splice(mealIndex, 1)
   }
 }

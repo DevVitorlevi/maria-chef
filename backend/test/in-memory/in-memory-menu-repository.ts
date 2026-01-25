@@ -2,9 +2,13 @@ import type { Cardapio } from "@/generated/prisma/client";
 import type { CreateMenuInput, FindAllFiltersParams, FindAllMenusOutput } from "@/repositories/DTOs/menu.dtos";
 import type { MenuRepository } from "@/repositories/menu-repository";
 import { randomUUID } from "node:crypto";
+import type { InMemoryMealRepository } from "./in-memory-meal-repository";
 
 export class InMemoryMenuRepository implements MenuRepository {
   public database: Cardapio[] = []
+
+  constructor(private mealRepository?: InMemoryMealRepository) { }
+
   async create(data: CreateMenuInput) {
     const menu: Cardapio = {
       id: randomUUID(),
@@ -26,10 +30,21 @@ export class InMemoryMenuRepository implements MenuRepository {
   }
 
   async findById(menuId: string) {
-    const menu = await this.database.find((menu) => menu.id === menuId)
+    const menu = this.database.find((menu) => menu.id === menuId)
 
     if (!menu) {
       return null
+    }
+
+    if (this.mealRepository) {
+      const refeicoes = this.mealRepository.database.filter(
+        meal => meal.cardapioId === menuId
+      )
+
+      return {
+        ...menu,
+        refeicoes
+      }
     }
 
     return menu
