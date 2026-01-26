@@ -1,3 +1,4 @@
+import type { Refeicao } from "@/generated/prisma/client"
 
 export interface CreateMenuInput {
   title: string
@@ -40,6 +41,7 @@ export interface FindByIdMenuOutput {
     restricoes: string[]
     preferencias: string | null
     geradoPorIA: boolean
+    refeicoes: Refeicao[]
     createdAt: Date
     updatedAt: Date
   }
