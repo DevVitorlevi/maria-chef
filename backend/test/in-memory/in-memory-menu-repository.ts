@@ -1,5 +1,5 @@
 import type { Cardapio } from "@/generated/prisma/client";
-import type { CreateMenuInput, FindAllFiltersParams, FindAllMenusOutput } from "@/repositories/DTOs/menu.dtos";
+import type { CreateMenuInput, FindAllFiltersParams, FindAllMenusOutput, UpdateMenuInput } from "@/repositories/DTOs/menu.dtos";
 import type { MenuRepository } from "@/repositories/menu-repository";
 import { randomUUID } from "node:crypto";
 import type { InMemoryMealRepository } from "./in-memory-meal-repository";
@@ -30,24 +30,22 @@ export class InMemoryMenuRepository implements MenuRepository {
   }
 
   async findById(menuId: string) {
-    const menu = this.database.find((menu) => menu.id === menuId)
+    const menu = this.database.find(menu => menu.id === menuId)
 
     if (!menu) {
       return null
     }
 
-    if (this.mealRepository) {
-      const refeicoes = this.mealRepository.database.filter(
+    const refeicoes = this.mealRepository
+      ? this.mealRepository.database.filter(
         meal => meal.cardapioId === menuId
       )
+      : []
 
-      return {
-        ...menu,
-        refeicoes
-      }
+    return {
+      ...menu,
+      refeicoes,
     }
-
-    return menu
   }
 
   async findAll(params?: FindAllFiltersParams): Promise<FindAllMenusOutput> {
@@ -87,6 +85,37 @@ export class InMemoryMenuRepository implements MenuRepository {
       total,
       page,
       totalPages
+    }
+  }
+  async update(id: string, data: UpdateMenuInput) {
+    const menu = this.database.find(menu => menu.id === id)
+
+    if (!menu) {
+      throw new Error('Cardápio não encontrado')
+    }
+
+    Object.assign(menu, {
+      ...(data.title !== undefined && { titulo: data.title }),
+      ...(data.checkIn !== undefined && { checkin: new Date(data.checkIn) }),
+      ...(data.checkOut !== undefined && { checkout: new Date(data.checkOut) }),
+      ...(data.adults !== undefined && { adultos: data.adults }),
+      ...(data.kids !== undefined && { criancas: data.kids }),
+      ...(data.restricoes !== undefined && { restricoes: data.restricoes }),
+      ...(data.preferencias !== undefined && { preferencias: data.preferencias }),
+      updatedAt: new Date()
+    })
+
+    const refeicoes = this.mealRepository
+      ? this.mealRepository.database.filter(
+        meal => meal.cardapioId === id
+      )
+      : []
+
+    return {
+      menu: {
+        ...menu,
+        refeicoes
+      }
     }
   }
 }

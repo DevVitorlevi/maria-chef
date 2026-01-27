@@ -1,6 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import type { CreateMenuInput, FindAllFiltersParams } from "../DTOs/menu.dtos";
+import type { CreateMenuInput, FindAllFiltersParams, UpdateMenuInput, UpdateMenuOutput } from "../DTOs/menu.dtos";
 import type { MenuRepository } from "../menu-repository";
 
 export class PrismaMenuRepository implements MenuRepository {
@@ -24,6 +24,9 @@ export class PrismaMenuRepository implements MenuRepository {
     const menu = await prisma.cardapio.findUnique({
       where: {
         id: menuId
+      },
+      include: {
+        refeicoes: true
       }
     })
 
