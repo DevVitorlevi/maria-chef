@@ -1,6 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import type { CreateMenuInput, FindAllFiltersParams, UpdateMenuInput, UpdateMenuOutput } from "../DTOs/menu.dtos";
+import type { CreateMenuInput, FindAllFiltersParams, UpdateMenuInput } from "../DTOs/menu.dtos";
 import type { MenuRepository } from "../menu-repository";
 
 export class PrismaMenuRepository implements MenuRepository {
@@ -74,4 +74,23 @@ export class PrismaMenuRepository implements MenuRepository {
     }
   }
 
+  async update(id: string, data: UpdateMenuInput) {
+    const menu = await prisma.cardapio.update({
+      where: { id },
+      data: {
+        ...(data.title !== undefined && { titulo: data.title }),
+        ...(data.checkIn !== undefined && { checkin: data.checkIn }),
+        ...(data.checkOut !== undefined && { checkout: data.checkOut }),
+        ...(data.adults !== undefined && { adultos: data.adults }),
+        ...(data.kids !== undefined && { criancas: data.kids }),
+        ...(data.restricoes !== undefined && { restricoes: data.restricoes }),
+        ...(data.preferencias !== undefined && { preferencias: data.preferencias }),
+      },
+      include: {
+        refeicoes: true
+      }
+    })
+
+    return { menu }
+  }
 }
