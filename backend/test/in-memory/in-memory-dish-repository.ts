@@ -81,13 +81,26 @@ export class InMemoryDishRepository implements DishRepository {
     const dish = this.database.find(dish => dish.id === dishId)
 
     if (!dish) {
-      return null
+      throw new Error('Dish not found')
     }
 
-    dish.nome = data.nome
-    dish.categoria = data.categoria
+    Object.assign(dish, {
+      ...(data.nome !== undefined && { nome: data.nome }),
+      ...(data.categoria !== undefined && { categoria: data.categoria }),
+      updatedAt: new Date()
+    })
 
-    return dish
+    const ingredientes = this.ingredients.filter((i) => i.pratoId === dishId)
+
+    return {
+      dish: {
+        id: dish.id,
+        nome: dish.nome,
+        categoria: dish.categoria,
+        createdAt: dish.createdAt,
+        ingredientes
+      }
+    }
   }
 
   async duplicate(

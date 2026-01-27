@@ -45,12 +45,26 @@ export interface FindByIdDishOutput {
     }[]
   }
 }
-
 export interface UpdateDishInput {
-  nome: string;
-  categoria: CategoriaPrato;
+  nome?: string;
+  categoria?: CategoriaPrato;
 }
-
+export interface UpdateDishOutput {
+  dish: {
+    id: string
+    nome: string
+    categoria: CategoriaPrato
+    createdAt: Date
+    ingredientes: {
+      id: string
+      pratoId: string
+      nome: string
+      quantidade: Decimal
+      unidade: string
+      categoria: CategoriaIngrediente
+    }[]
+  }
+}
 export interface DuplicateDishParams {
   dishId: string
 }
