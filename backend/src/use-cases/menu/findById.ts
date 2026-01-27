@@ -11,7 +11,7 @@ export class FindByIdMenuUseCase {
     if (!menu) {
       throw new ResourceNotFoundError()
     }
-    1
+
     return { menu }
   }
 }
