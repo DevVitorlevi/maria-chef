@@ -14,8 +14,8 @@ export async function update(
   });
 
   const updateDishBodySchema = z.object({
-    nome: z.string().min(1),
-    categoria: z.nativeEnum(CategoriaPrato),
+    nome: z.string().min(1).optional(),
+    categoria: z.nativeEnum(CategoriaPrato).optional(),
   });
 
   const { dishId } = updateDishParamsSchema.parse(request.params);
@@ -24,16 +24,19 @@ export async function update(
   try {
     const updateDishUseCase = makeUpdateDishUseCase();
 
-    await updateDishUseCase.execute(dishId, {
-      nome,
-      categoria,
+    const dish = await updateDishUseCase.execute(dishId, {
+      ...(nome !== undefined && { nome }),
+      ...(categoria !== undefined && { categoria }),
     });
 
-    return reply.status(204).send();
-  } catch (error) {
+    return reply.status(200).send({
+      message: "Updated Dish",
+      dish
+    });
 
+  } catch (error) {
     if (error instanceof ResourceNotFoundError) {
-      return reply.status(400).send({
+      return reply.status(404).send({
         message: error.message,
       });
     }

@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { CategoriaPrato } from "../../../src/generated/prisma/enums";
-import { InMemoryDishRepository } from "../../in-memory/in-memory-dish-repository";
 import { UpdateDishUseCase } from "../../../src/use-cases/dish/update";
 import { ResourceNotFoundError } from "../../../src/utils/errors/resource-not-found-error";
+import { InMemoryDishRepository } from "../../in-memory/in-memory-dish-repository";
 
 describe("UpdateDishUseCase", () => {
   let dishRepository: InMemoryDishRepository;
@@ -21,19 +21,18 @@ describe("UpdateDishUseCase", () => {
 
     const result = await sut.execute(createdDish.id, {
       nome: "Feijoada Completa",
-      categoria: CategoriaPrato.ALMOCO,
     });
 
-    expect(result.prato.id).toEqual(createdDish.id);
-    expect(result.prato.nome).toEqual("Feijoada Completa");
-    expect(result.prato.categoria).toEqual(CategoriaPrato.ALMOCO);
+    expect(result.id).toEqual(createdDish.id);
+    expect(result.nome).toEqual("Feijoada Completa");
+    expect(result.categoria).toEqual(CategoriaPrato.ALMOCO);
+    expect(result.ingredientes).toBeDefined();
   });
 
-  it("should not be able to update a dish", async () => {
+  it("should not be able to update a non-existent dish", async () => {
     await expect(() =>
       sut.execute("prato-inexistente", {
         nome: "Prato que não existe",
-        categoria: CategoriaPrato.ALMOCO,
       })
     ).rejects.toBeInstanceOf(ResourceNotFoundError);
   });
@@ -49,7 +48,35 @@ describe("UpdateDishUseCase", () => {
       categoria: CategoriaPrato.SOBREMESA,
     });
 
-    expect(result.prato.nome).toEqual("Nome Novo");
-    expect(result.prato.categoria).toEqual(CategoriaPrato.SOBREMESA);
+    expect(result.nome).toEqual("Nome Novo");
+    expect(result.categoria).toEqual(CategoriaPrato.SOBREMESA);
+  });
+
+  it("should update only dish name", async () => {
+    const createdDish = await dishRepository.create({
+      nome: "Nome Antigo",
+      categoria: CategoriaPrato.ALMOCO,
+    });
+
+    const result = await sut.execute(createdDish.id, {
+      nome: "Nome Novo",
+    });
+
+    expect(result.nome).toEqual("Nome Novo");
+    expect(result.categoria).toEqual(CategoriaPrato.ALMOCO);
+  });
+
+  it("should update only dish category", async () => {
+    const createdDish = await dishRepository.create({
+      nome: "Feijoada",
+      categoria: CategoriaPrato.ALMOCO,
+    });
+
+    const result = await sut.execute(createdDish.id, {
+      categoria: CategoriaPrato.JANTAR,
+    });
+
+    expect(result.nome).toEqual("Feijoada");
+    expect(result.categoria).toEqual(CategoriaPrato.JANTAR);
   });
 });

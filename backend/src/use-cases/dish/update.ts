@@ -1,6 +1,7 @@
 import type { DishRepository } from "@/repositories/dish-repository";
 import type { UpdateDishInput } from "@/repositories/DTOs/dish.dtos";
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
+
 export class UpdateDishUseCase {
   constructor(private dishRepository: DishRepository) { }
 
@@ -15,11 +16,11 @@ export class UpdateDishUseCase {
       throw new ResourceNotFoundError();
     }
 
-    const prato = await this.dishRepository.update(dishId, {
-      nome,
-      categoria
+    const { dish } = await this.dishRepository.update(dishId, {
+      ...(nome !== undefined && { nome }),
+      ...(categoria !== undefined && { categoria }),
     });
 
-    return { prato };
+    return dish;
   }
 }

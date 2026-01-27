@@ -48,11 +48,19 @@ export class PrismaDishRepository implements DishRepository {
     dishId: string,
     data: UpdateDishInput
   ) {
-    return prisma.prato.update({
+    const dish = await prisma.prato.update({
       where: { id: dishId },
       data,
+      include: {
+        ingredientes: true
+      }
     });
+
+    return {
+      dish
+    };
   }
+
   async duplicate(
     dishId: string,
     data?: DuplicateDishInput
