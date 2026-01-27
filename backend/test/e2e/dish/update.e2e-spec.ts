@@ -29,6 +29,40 @@ describe("Update Dish (e2e)", () => {
     expect(updateResponse.statusCode).toEqual(204);
   });
 
+  it("should be able to update just 'nome' ", async () => {
+    const createResponse = await createDish(app, {
+      nome: "Feijoada Antiga",
+      categoria: CategoriaPrato.ALMOCO,
+    });
+
+    const dishId = createResponse.body.id
+
+    const updateResponse = await request(app.server)
+      .put(`/dish/${dishId}`)
+      .send({
+        nome: "Feijoada Completa",
+      });
+
+    expect(updateResponse.statusCode).toEqual(204);
+  })
+
+  it("should be able to update just 'categoria' ", async () => {
+    const createResponse = await createDish(app, {
+      nome: "Feijoada",
+      categoria: CategoriaPrato.ALMOCO,
+    });
+
+    const dishId = createResponse.body.id
+
+    const updateResponse = await request(app.server)
+      .put(`/dish/${dishId}`)
+      .send({
+        ncategoria: CategoriaPrato.JANTAR,
+      });
+
+    expect(updateResponse.statusCode).toEqual(204);
+  })
+
   it("should not be able update an dish does not exist", async () => {
     const response = await request(app.server)
       .put("/dish/non-existent-id")
