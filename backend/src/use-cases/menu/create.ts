@@ -6,21 +6,13 @@ export class CreateMenuUseCase {
   constructor(private menuRepository: MenuRepository) { }
 
   async execute(
-    { title, checkIn, checkOut, adults, kids, restricoes, preferencias }: CreateMenuInput
+    data: CreateMenuInput
   ) {
 
-    if (checkIn > checkOut) {
+    if (data.checkIn > data.checkOut) {
       throw new InvalidDateError()
     }
-    const menu = await this.menuRepository.create({
-      title,
-      checkIn,
-      checkOut,
-      adults,
-      kids: kids ?? 0,
-      restricoes: restricoes ?? [],
-      preferencias: preferencias ?? undefined
-    })
+    const menu = await this.menuRepository.create(data)
 
     return { menu }
   }
