@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
 import type { CreateMenuInput, FindAllFiltersParams, UpdateMenuInput } from "../DTOs/menu.dtos";
 import type { MenuRepository } from "../menu-repository";
 
@@ -92,5 +93,69 @@ export class PrismaMenuRepository implements MenuRepository {
     })
 
     return { menu }
+  }
+
+  async duplicate(menuId: string) {
+    return prisma.$transaction(async tx => {
+      const currentMenu = await tx.cardapio.findUnique({
+        where: { id: menuId },
+        include: {
+          refeicoes: {
+            include: {
+              pratos: true
+            }
+          }
+        }
+      })
+
+      if (!currentMenu) {
+        throw new ResourceNotFoundError()
+      }
+
+      const duplicatedMenu = await tx.cardapio.create({
+        data: {
+          titulo: `${currentMenu.titulo} (cópia)`,
+          checkin: currentMenu.checkin,
+          checkout: currentMenu.checkout,
+          adultos: currentMenu.adultos,
+          criancas: currentMenu.criancas,
+          preferencias: currentMenu.preferencias,
+          restricoes: currentMenu.restricoes,
+          geradoPorIA: currentMenu.geradoPorIA,
+        }
+      })
+
+      for (const refeicao of currentMenu.refeicoes) {
+        await tx.refeicao.create({
+          data: {
+            cardapioId: duplicatedMenu.id,
+            data: refeicao.data,
+            tipo: refeicao.tipo,
+            pratos: {
+              connect: refeicao.pratos.map(prato => ({ id: prato.id }))
+            }
+          }
+        })
+      }
+
+      const duplicatedMenuWithRelations = await tx.cardapio.findUnique({
+        where: { id: duplicatedMenu.id },
+        include: {
+          refeicoes: {
+            include: {
+              pratos: true
+            }
+          }
+        }
+      })
+
+      if (!duplicatedMenuWithRelations) {
+        throw new Error('Erro ao recuperar cardápio duplicado')
+      }
+
+      return {
+        cardapio: duplicatedMenuWithRelations
+      }
+    })
   }
 }
