@@ -1,5 +1,4 @@
-import type { Refeicao } from "@/generated/prisma/client"
-
+import type { CategoriaPrato, Refeicao, TipoRefeicao } from "@/generated/prisma/client"
 export interface CreateMenuInput {
   title: string
   checkIn: Date
@@ -9,7 +8,6 @@ export interface CreateMenuInput {
   restricoes?: string[],
   preferencias?: string | undefined
 }
-
 export interface CreateMenuOutput {
   menu: {
     id: string
@@ -25,11 +23,9 @@ export interface CreateMenuOutput {
     updatedAt: Date
   }
 }
-
 export interface FindByIdMenuParams {
   menuId: string
 }
-
 export interface FindByIdMenuOutput {
   menu: {
     id: string
@@ -52,7 +48,6 @@ export interface FindAllFiltersParams {
   page?: number | undefined
   limit?: number | undefined
 }
-
 export interface FindAllMenusOutput {
   menus: {
     id: string
@@ -71,7 +66,6 @@ export interface FindAllMenusOutput {
   page: number
   totalPages: number
 }
-
 export interface UpdateMenuInput {
   title?: string
   checkIn?: Date
@@ -81,7 +75,6 @@ export interface UpdateMenuInput {
   restricoes?: string[]
   preferencias?: string | null
 }
-
 export interface UpdateMenuOutput {
   menu: {
     id: string
@@ -95,5 +88,36 @@ export interface UpdateMenuOutput {
     geradoPorIA: boolean
     createdAt: Date
     updatedAt: Date
+  }
+}
+export interface DuplicateMenuParams {
+  menuId: string
+}
+export interface DuplicateMenuOutput {
+  cardapio: {
+    id: string
+    titulo: string
+    checkin: Date
+    checkout: Date
+    adultos: number
+    criancas: number
+    restricoes: string[]
+    preferencias: string | null
+    geradoPorIA: boolean
+    createdAt: Date
+    updatedAt: Date
+    refeicoes: Array<{
+      id: string
+      cardapioId: string
+      data: Date
+      tipo: TipoRefeicao
+      pratos: Array<{
+        id: string
+        nome: string
+        categoria: CategoriaPrato
+        createdAt: Date
+      }>
+      createdAt: Date
+    }>
   }
 }
