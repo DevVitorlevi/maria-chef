@@ -98,3 +98,7 @@ export interface DuplicateDishOutput {
   }
 }
 
+export interface DeleteDishParams {
+  id: string
+}
+

@@ -5,10 +5,7 @@ import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
 export class UpdateDishUseCase {
   constructor(private dishRepository: DishRepository) { }
 
-  async execute(dishId: string, {
-    nome,
-    categoria
-  }: UpdateDishInput) {
+  async execute(dishId: string, data: UpdateDishInput) {
 
     const dishExists = await this.dishRepository.findById({ dishId });
 
@@ -16,10 +13,7 @@ export class UpdateDishUseCase {
       throw new ResourceNotFoundError();
     }
 
-    const { dish } = await this.dishRepository.update(dishId, {
-      ...(nome !== undefined && { nome }),
-      ...(categoria !== undefined && { categoria }),
-    });
+    const { dish } = await this.dishRepository.update(dishId, data);
 
     return dish;
   }

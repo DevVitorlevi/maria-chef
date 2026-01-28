@@ -6,13 +6,13 @@ import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
 export class DeleteIngredientUseCase {
   constructor(private ingredientRepository: IngredientRepository, private dishRepository: DishRepository) { }
 
-  async execute({ dishId, ingredientId }: DeleteIngredientParams) {
-    const dishExists = await this.dishRepository.findById({ dishId })
+  async execute(params: DeleteIngredientParams) {
+    const dishExists = await this.dishRepository.findById({ dishId: params.dishId })
 
     if (!dishExists) {
       throw new ResourceNotFoundError()
     }
 
-    await this.ingredientRepository.delete({ dishId, ingredientId })
+    await this.ingredientRepository.delete(params)
   }
 }

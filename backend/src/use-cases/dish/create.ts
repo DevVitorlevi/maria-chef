@@ -4,14 +4,8 @@ import type { CreateDishInput, CreateDishOutput } from "@/repositories/DTOs/dish
 export class CreateDishUseCase {
   constructor(private dishRepository: DishRepository) { }
 
-  async execute({
-    nome,
-    categoria,
-  }: CreateDishInput): Promise<CreateDishOutput> {
-    const dish = await this.dishRepository.create({
-      nome,
-      categoria,
-    });
+  async execute(data: CreateDishInput): Promise<CreateDishOutput> {
+    const dish = await this.dishRepository.create(data);
 
     return {
       dish,

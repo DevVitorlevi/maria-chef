@@ -9,23 +9,13 @@ export class CreateIngredientUseCase {
     private dishRepository: DishRepository
   ) { }
 
-  async execute(dishId: string, {
-    nome,
-    quantidade,
-    unidade,
-    categoria,
-  }: CreateIngredientInput): Promise<CreateIngredientOutput> {
+  async execute(dishId: string, data: CreateIngredientInput): Promise<CreateIngredientOutput> {
     const dishExists = await this.dishRepository.findById({ dishId })
 
     if (!dishExists) {
       throw new ResourceNotFoundError()
     }
-    const ingredient = await this.ingredientRepository.create(dishId, {
-      nome,
-      quantidade,
-      unidade,
-      categoria
-    })
+    const ingredient = await this.ingredientRepository.create(dishId, data)
 
     return {
       ingredient
