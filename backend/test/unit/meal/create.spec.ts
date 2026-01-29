@@ -29,19 +29,21 @@ describe("Create Meal Use Case", () => {
       categoria: CategoriaPrato.ALMOCO,
     })
 
-    await ingredientRepository.create(dish.id, {
-      nome: "Macarrão",
-      quantidade: 400,
-      unidade: "g",
-      categoria: CategoriaIngrediente.OUTROS
-    })
+    await Promise.all([
+      ingredientRepository.create(dish.id, {
+        nome: "Macarrão",
+        quantidade: 400,
+        unidade: "g",
+        categoria: CategoriaIngrediente.OUTROS
+      }),
 
-    await ingredientRepository.create(dish.id, {
-      nome: "Molho de Tomate",
-      quantidade: 200,
-      unidade: "g",
-      categoria: CategoriaIngrediente.TEMPERO
-    })
+      ingredientRepository.create(dish.id, {
+        nome: "Molho de Tomate",
+        quantidade: 200,
+        unidade: "g",
+        categoria: CategoriaIngrediente.TEMPERO
+      })
+    ])
 
     const menu = await menuRepository.create({
       title: "Cardapio Maria",
@@ -69,20 +71,20 @@ describe("Create Meal Use Case", () => {
   })
 
   it("should be able to create a meal with multiple dishes", async () => {
-    const dish1 = await dishRepository.create({
-      nome: "Arroz Integral",
-      categoria: CategoriaPrato.ALMOCO,
-    })
-
-    const dish2 = await dishRepository.create({
-      nome: "Feijão Preto",
-      categoria: CategoriaPrato.ALMOCO,
-    })
-
-    const dish3 = await dishRepository.create({
-      nome: "Frango Grelhado",
-      categoria: CategoriaPrato.ALMOCO,
-    })
+    const [dish1, dish2, dish3] = await Promise.all([
+      dishRepository.create({
+        nome: "Arroz Integral",
+        categoria: CategoriaPrato.ALMOCO,
+      }),
+      dishRepository.create({
+        nome: "Feijão Preto",
+        categoria: CategoriaPrato.ALMOCO,
+      }),
+      dishRepository.create({
+        nome: "Frango Grelhado",
+        categoria: CategoriaPrato.ALMOCO,
+      })
+    ])
 
     const menu = await menuRepository.create({
       title: "Cardápio Fitness",
@@ -106,25 +108,20 @@ describe("Create Meal Use Case", () => {
   })
 
   it("should be able to create different meal types", async () => {
-    const breakfast = await dishRepository.create({
-      nome: "Pão com Manteiga",
-      categoria: CategoriaPrato.CAFE_MANHA,
-    })
-
-    const lunch = await dishRepository.create({
-      nome: "Salada Caesar",
-      categoria: CategoriaPrato.ALMOCO,
-    })
-
-    const dinner = await dishRepository.create({
-      nome: "Sopa de Legumes",
-      categoria: CategoriaPrato.JANTAR,
-    })
-
-    const snack = await dishRepository.create({
-      nome: "Frutas Variadas",
-      categoria: CategoriaPrato.LANCHE,
-    })
+    const [breakfast, lunch, dinner] = await Promise.all([
+      dishRepository.create({
+        nome: "Pão com Manteiga",
+        categoria: CategoriaPrato.CAFE_MANHA,
+      }),
+      dishRepository.create({
+        nome: "Salada Caesar",
+        categoria: CategoriaPrato.ALMOCO,
+      }),
+      dishRepository.create({
+        nome: "Sopa de Legumes",
+        categoria: CategoriaPrato.JANTAR,
+      })
+    ])
 
     const menu = await menuRepository.create({
       title: "Cardápio Completo",
@@ -134,27 +131,27 @@ describe("Create Meal Use Case", () => {
       kids: 0,
     })
 
-    const breakfastMeal = await sut.execute({
-      menuId: menu.id,
-      date: new Date("2026-04-01"),
-      type: TipoRefeicao.CAFE,
-      dishes: [breakfast.id]
-    })
 
-    const lunchMeal = await sut.execute({
-      menuId: menu.id,
-      date: new Date("2026-04-01"),
-      type: TipoRefeicao.ALMOCO,
-      dishes: [lunch.id]
-    })
-
-    const dinnerMeal = await sut.execute({
-      menuId: menu.id,
-      date: new Date("2026-04-01"),
-      type: TipoRefeicao.JANTAR,
-      dishes: [dinner.id]
-    })
-
+    const [breakfastMeal, lunchMeal, dinnerMeal] = await Promise.all([
+      sut.execute({
+        menuId: menu.id,
+        date: new Date("2026-04-01"),
+        type: TipoRefeicao.CAFE,
+        dishes: [breakfast.id]
+      }),
+      sut.execute({
+        menuId: menu.id,
+        date: new Date("2026-04-01"),
+        type: TipoRefeicao.ALMOCO,
+        dishes: [lunch.id]
+      }),
+      sut.execute({
+        menuId: menu.id,
+        date: new Date("2026-04-01"),
+        type: TipoRefeicao.JANTAR,
+        dishes: [dinner.id]
+      })
+    ])
 
     expect(breakfastMeal.meal.tipo).toBe(TipoRefeicao.CAFE)
     expect(lunchMeal.meal.tipo).toBe(TipoRefeicao.ALMOCO)
@@ -191,26 +188,26 @@ describe("Create Meal Use Case", () => {
       kids: 1,
     })
 
-    const meal1 = await sut.execute({
-      menuId: menu.id,
-      date: new Date("2026-05-01"),
-      type: TipoRefeicao.CAFE,
-      dishes: [dish.id]
-    })
-
-    const meal2 = await sut.execute({
-      menuId: menu.id,
-      date: new Date("2026-05-02"),
-      type: TipoRefeicao.CAFE,
-      dishes: [dish.id]
-    })
-
-    const meal3 = await sut.execute({
-      menuId: menu.id,
-      date: new Date("2026-05-03"),
-      type: TipoRefeicao.CAFE,
-      dishes: [dish.id]
-    })
+    const [meal1, meal2, meal3] = await Promise.all([
+      sut.execute({
+        menuId: menu.id,
+        date: new Date("2026-05-01"),
+        type: TipoRefeicao.CAFE,
+        dishes: [dish.id]
+      }),
+      sut.execute({
+        menuId: menu.id,
+        date: new Date("2026-05-02"),
+        type: TipoRefeicao.CAFE,
+        dishes: [dish.id]
+      }),
+      sut.execute({
+        menuId: menu.id,
+        date: new Date("2026-05-03"),
+        type: TipoRefeicao.CAFE,
+        dishes: [dish.id]
+      }),
+    ])
 
     expect(meal1.meal.id).not.toBe(meal2.meal.id)
     expect(meal2.meal.id).not.toBe(meal3.meal.id)
@@ -220,15 +217,17 @@ describe("Create Meal Use Case", () => {
   })
 
   it("should be able to create multiple meals for the same date with different types", async () => {
-    const dish1 = await dishRepository.create({
-      nome: "Café com Leite",
-      categoria: CategoriaPrato.CAFE_MANHA,
-    })
+    const [dish1, dish2] = await Promise.all([
+      dishRepository.create({
+        nome: "Café com Leite",
+        categoria: CategoriaPrato.CAFE_MANHA,
+      }),
 
-    const dish2 = await dishRepository.create({
-      nome: "Feijoada",
-      categoria: CategoriaPrato.ALMOCO,
-    })
+      dishRepository.create({
+        nome: "Feijoada",
+        categoria: CategoriaPrato.ALMOCO,
+      })
+    ])
 
     const menu = await menuRepository.create({
       title: "Cardápio do Dia",

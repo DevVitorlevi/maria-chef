@@ -33,26 +33,28 @@ describe("Delete Ingredient Use Case", () => {
         ingredientes: { create: [] },
       })
 
-      const ingrediente1 = await ingredientRepository.create(prato.id, {
-        nome: "Farinha de Trigo",
-        quantidade: 200,
-        unidade: "g",
-        categoria: CategoriaIngrediente.GRAOS,
-      })
+      const [ingrediente1, ingrediente2, ingrediente3] = await Promise.all([
+        ingredientRepository.create(prato.id, {
+          nome: "Farinha de Trigo",
+          quantidade: 200,
+          unidade: "g",
+          categoria: CategoriaIngrediente.GRAOS,
+        }),
 
-      const ingrediente2 = await ingredientRepository.create(prato.id, {
-        nome: "Leite",
-        quantidade: 250,
-        unidade: "ml",
-        categoria: CategoriaIngrediente.LATICINIO,
-      })
+        ingredientRepository.create(prato.id, {
+          nome: "Leite",
+          quantidade: 250,
+          unidade: "ml",
+          categoria: CategoriaIngrediente.LATICINIO,
+        }),
 
-      const ingrediente3 = await ingredientRepository.create(prato.id, {
-        nome: "Ovos",
-        quantidade: 2,
-        unidade: "unidades",
-        categoria: CategoriaIngrediente.PROTEINA,
-      })
+        ingredientRepository.create(prato.id, {
+          nome: "Ovos",
+          quantidade: 2,
+          unidade: "unidades",
+          categoria: CategoriaIngrediente.PROTEINA,
+        })
+      ])
 
       prato.ingredientes = [ingrediente1, ingrediente2, ingrediente3]
 

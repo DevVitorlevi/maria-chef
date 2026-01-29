@@ -13,6 +13,7 @@ describe("Duplicate Dish Use Case", () => {
   let originalDish: DishWithIngredients;
 
   beforeEach(async () => {
+    1
     const sharedIngredients: Ingrediente[] = [];
 
     dishRepository = new InMemoryDishRepository(sharedIngredients);
@@ -26,19 +27,21 @@ describe("Duplicate Dish Use Case", () => {
 
     const originalDishId = originalDish.id;
 
-    await ingredientRepository.create(originalDishId, {
-      nome: "Goma de Tapioca",
-      quantidade: 200,
-      unidade: "g",
-      categoria: CategoriaIngrediente.OUTROS,
-    });
+    await Promise.all([
+      ingredientRepository.create(originalDishId, {
+        nome: "Goma de Tapioca",
+        quantidade: 200,
+        unidade: "g",
+        categoria: CategoriaIngrediente.OUTROS,
+      }),
+      ingredientRepository.create(originalDishId, {
+        nome: "Queijo",
+        quantidade: 100,
+        unidade: "g",
+        categoria: CategoriaIngrediente.LATICINIO,
+      })
+    ])
 
-    await ingredientRepository.create(originalDishId, {
-      nome: "Queijo",
-      quantidade: 100,
-      unidade: "g",
-      categoria: CategoriaIngrediente.LATICINIO,
-    });
   });
 
   it("should be able to duplicate a dish", async () => {

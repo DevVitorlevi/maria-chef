@@ -16,26 +16,6 @@ describe("Delete Dish Use Case", () => {
     const prato = await dishRepository.create({
       nome: "Macarrão à Bolonhesa",
       categoria: CategoriaPrato.ALMOCO,
-      ingredientes: [
-        {
-          nome: "Macarrão",
-          quantidade: 500,
-          unidade: "g",
-          categoria: CategoriaIngrediente.GRAOS,
-        },
-        {
-          nome: "Carne Moída",
-          quantidade: 300,
-          unidade: "g",
-          categoria: CategoriaIngrediente.PROTEINA,
-        },
-        {
-          nome: "Tomate",
-          quantidade: 4,
-          unidade: "unidades",
-          categoria: CategoriaIngrediente.HORTIFRUTI,
-        },
-      ],
     });
 
     await sut.execute({ id: prato.id })
