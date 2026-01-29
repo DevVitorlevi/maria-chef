@@ -12,16 +12,17 @@ describe("Find All dishes Use Case", () => {
   })
 
   it("should be able to list all dishes", async () => {
-    await dishRepository.create({
-      nome: "Tapioca de queijo",
-      categoria: CategoriaPrato.CAFE_MANHA,
-    })
 
-    await dishRepository.create({
-      nome: "Arroz branco",
-      categoria: CategoriaPrato.ALMOCO,
-    })
-
+    await Promise.all([
+      dishRepository.create({
+        nome: "Tapioca de queijo",
+        categoria: CategoriaPrato.CAFE_MANHA,
+      }),
+      dishRepository.create({
+        nome: "Arroz branco",
+        categoria: CategoriaPrato.ALMOCO,
+      })
+    ])
     const { dishes } = await sut.execute({})
 
     expect(dishes).toHaveLength(2)
@@ -35,20 +36,23 @@ describe("Find All dishes Use Case", () => {
   })
 
   it("should filter dishes by nome", async () => {
-    await dishRepository.create({
-      nome: "Tapioca de queijo",
-      categoria: CategoriaPrato.CAFE_MANHA,
-    })
 
-    await dishRepository.create({
-      nome: "Tapioca doce",
-      categoria: CategoriaPrato.SOBREMESA,
-    })
+    await Promise.all([
+      dishRepository.create({
+        nome: "Tapioca de queijo",
+        categoria: CategoriaPrato.CAFE_MANHA,
+      }),
 
-    await dishRepository.create({
-      nome: "Ovo mexido",
-      categoria: CategoriaPrato.CAFE_MANHA,
-    })
+      dishRepository.create({
+        nome: "Tapioca doce",
+        categoria: CategoriaPrato.SOBREMESA,
+      }),
+
+      dishRepository.create({
+        nome: "Ovo mexido",
+        categoria: CategoriaPrato.CAFE_MANHA,
+      })
+    ])
 
     const { dishes } = await sut.execute({ nome: "tapioca" })
 
@@ -76,25 +80,25 @@ describe("Find All dishes Use Case", () => {
   })
 
   it("should filter dishes by categoria", async () => {
-    await dishRepository.create({
-      nome: "Tapioca de queijo",
-      categoria: CategoriaPrato.CAFE_MANHA,
-    })
 
-    await dishRepository.create({
-      nome: "Ovo mexido",
-      categoria: CategoriaPrato.CAFE_MANHA,
-    })
-
-    await dishRepository.create({
-      nome: "Arroz branco",
-      categoria: CategoriaPrato.ALMOCO,
-    })
-
-    await dishRepository.create({
-      nome: "Pudim",
-      categoria: CategoriaPrato.SOBREMESA,
-    })
+    await Promise.all([
+      dishRepository.create({
+        nome: "Tapioca de queijo",
+        categoria: CategoriaPrato.CAFE_MANHA,
+      }),
+      dishRepository.create({
+        nome: "Ovo mexido",
+        categoria: CategoriaPrato.CAFE_MANHA,
+      }),
+      dishRepository.create({
+        nome: "Arroz branco",
+        categoria: CategoriaPrato.ALMOCO,
+      }),
+      dishRepository.create({
+        nome: "Pudim",
+        categoria: CategoriaPrato.SOBREMESA,
+      })
+    ])
 
     const { dishes } = await sut.execute({ categoria: CategoriaPrato.CAFE_MANHA })
 
@@ -106,20 +110,25 @@ describe("Find All dishes Use Case", () => {
   })
 
   it("should combine nome and categoria filters", async () => {
-    await dishRepository.create({
-      nome: "Tapioca de queijo",
-      categoria: CategoriaPrato.CAFE_MANHA,
-    })
 
-    await dishRepository.create({
-      nome: "Tapioca doce",
-      categoria: CategoriaPrato.SOBREMESA,
-    })
-
-    await dishRepository.create({
-      nome: "Ovo mexido",
-      categoria: CategoriaPrato.CAFE_MANHA,
-    })
+    await Promise.all([
+      dishRepository.create({
+        nome: "Tapioca de queijo",
+        categoria: CategoriaPrato.CAFE_MANHA,
+      }),
+      dishRepository.create({
+        nome: "Ovo mexido",
+        categoria: CategoriaPrato.CAFE_MANHA,
+      }),
+      dishRepository.create({
+        nome: "Arroz branco",
+        categoria: CategoriaPrato.ALMOCO,
+      }),
+      dishRepository.create({
+        nome: "Pudim",
+        categoria: CategoriaPrato.SOBREMESA,
+      })
+    ])
 
     const { dishes } = await sut.execute({
       nome: "tapioca",
