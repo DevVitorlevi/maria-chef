@@ -1,5 +1,5 @@
 import type { Ingrediente, Prato } from "@/generated/prisma/client";
-import type { CreateDishInput, DuplicateDishInput, FindAllDishesFiltersInput, FindByIdDishParams, UpdateDishInput, UpdateDishOutput } from "./DTOs/dish.dtos";
+import type { CreateDishInput, FindAllDishesFiltersInput, FindByIdDishParams, UpdateDishInput, UpdateDishOutput } from "./DTOs/dish.dtos";
 
 export type DishWithIngredients = Prato & {
   ingredientes: Ingrediente[];
@@ -12,6 +12,6 @@ export interface DishRepository {
     dishId: string,
     data: UpdateDishInput
   ): Promise<UpdateDishOutput>
-  duplicate(dishId: string, data?: DuplicateDishInput): Promise<DishWithIngredients>
+  duplicate(dishId: string): Promise<DishWithIngredients>
   delete(id: string): void
 }
