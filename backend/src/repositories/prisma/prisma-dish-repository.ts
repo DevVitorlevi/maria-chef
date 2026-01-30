@@ -1,7 +1,7 @@
-import type { CategoriaPrato, Prato } from "@/generated/prisma/client";
+import type { Prato } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { DishRepository } from "../dish-repository";
-import type { CreateDishInput, DuplicateDishInput, FindAllDishesFiltersInput, FindByIdDishParams, UpdateDishInput } from "../DTOs/dish.dtos";
+import type { CreateDishInput, FindAllDishesFiltersInput, FindByIdDishParams, UpdateDishInput } from "../DTOs/dish.dtos";
 export class PrismaDishRepository implements DishRepository {
   async create(
     data: CreateDishInput
@@ -63,7 +63,6 @@ export class PrismaDishRepository implements DishRepository {
 
   async duplicate(
     dishId: string,
-    data?: DuplicateDishInput
   ) {
     const pratoOriginal = await prisma.prato.findUnique({
       where: { id: dishId },
@@ -78,22 +77,10 @@ export class PrismaDishRepository implements DishRepository {
 
     const nomeDuplicado = `${pratoOriginal.nome} (cópia)`;
 
-    const nomeAtualizado = data?.nome
-      ? typeof data.nome === 'object' && 'set' in data.nome
-        ? data.nome
-        : data.nome
-      : undefined;
-
-    const categoriaAtualizada = data?.categoria
-      ? typeof data.categoria === 'object' && 'set' in data.categoria
-        ? data.categoria
-        : data.categoria
-      : undefined;
-
     const pratoDuplicado = await prisma.prato.create({
       data: {
-        nome: (nomeAtualizado as string) ?? nomeDuplicado,
-        categoria: (categoriaAtualizada as CategoriaPrato) ?? pratoOriginal.categoria,
+        nome: nomeDuplicado,
+        categoria: pratoOriginal.categoria,
         ingredientes: {
           create: pratoOriginal.ingredientes.map((ingrediente) => ({
             nome: ingrediente.nome,

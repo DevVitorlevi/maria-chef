@@ -8,7 +8,6 @@ import type {
 } from "@/repositories/dish-repository"
 import type {
   CreateDishInput,
-  DuplicateDishInput,
   FindAllDishesFiltersInput,
   FindByIdDishParams,
   UpdateDishInput
@@ -104,8 +103,7 @@ export class InMemoryDishRepository implements DishRepository {
   }
 
   async duplicate(
-    dishId: string,
-    data?: DuplicateDishInput
+    dishId: string
   ): Promise<DishWithIngredients> {
     const pratoOriginal = await this.findById({ dishId })
 
@@ -114,13 +112,11 @@ export class InMemoryDishRepository implements DishRepository {
     }
 
     const nomeDuplicado = `${pratoOriginal.nome} (cópia)`
-    const nomeAtualizado = data?.nome
-    const categoriaAtualizada = data?.categoria
 
     const pratoDuplicado: Prato = {
       id: randomUUID(),
-      nome: nomeAtualizado ?? nomeDuplicado,
-      categoria: categoriaAtualizada ?? pratoOriginal.categoria,
+      nome: nomeDuplicado,
+      categoria: pratoOriginal.categoria,
       createdAt: new Date(),
     }
 
