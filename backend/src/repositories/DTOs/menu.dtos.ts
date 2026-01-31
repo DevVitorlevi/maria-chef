@@ -121,3 +121,7 @@ export interface DuplicateMenuOutput {
     }>
   }
 }
+
+export interface DeleteMenuParams {
+  id: string
+}
