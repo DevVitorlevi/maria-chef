@@ -1,6 +1,7 @@
 import type { Cardapio, Prato, Refeicao } from "@/generated/prisma/client";
 import type { CreateMenuInput, FindAllFiltersParams, FindAllMenusOutput, UpdateMenuInput } from "@/repositories/DTOs/menu.dtos";
 import type { MenuRepository } from "@/repositories/menu-repository";
+import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
 import { randomUUID } from "node:crypto";
 import type { InMemoryDishRepository } from "./in-memory-dish-repository";
 import type { InMemoryMealRepository } from "./in-memory-meal-repository";
@@ -211,5 +212,17 @@ export class InMemoryMenuRepository implements MenuRepository {
         refeicoes: duplicatedMeals
       }
     }
+  }
+
+  async delete(id: string) {
+    const menuIndex = this.database.findIndex(
+      menu => menu.id === id
+    )
+
+    if (menuIndex === -1) {
+      throw new ResourceNotFoundError()
+    }
+
+    this.database.splice(menuIndex, 1)
   }
 }

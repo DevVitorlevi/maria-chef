@@ -26,8 +26,6 @@ describe("Update Dish (e2e)", () => {
         categoria: CategoriaPrato.ALMOCO,
       });
 
-
-    console.log(updateResponse.body)
     expect(updateResponse.statusCode).toEqual(200);
     expect(updateResponse.body.dish).toBeDefined();
     expect(updateResponse.body.dish.id).toEqual(dishId);

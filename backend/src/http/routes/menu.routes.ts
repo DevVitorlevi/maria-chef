@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { create } from "../controllers/menu/create";
+import { deleteMenu } from "../controllers/menu/delete";
 import { duplicate } from "../controllers/menu/duplicate";
 import { findAll } from "../controllers/menu/findAll";
 import { findById } from "../controllers/menu/findById";
@@ -11,4 +12,5 @@ export function menuRoutes(app: FastifyInstance) {
   app.get("/cardapios", findAll)
   app.put("/cardapio/:id", update)
   app.post("/cardapio/:menuId/duplicar", duplicate)
+  app.delete("/cardapio/:id", deleteMenu)
 }

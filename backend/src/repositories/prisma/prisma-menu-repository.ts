@@ -158,4 +158,12 @@ export class PrismaMenuRepository implements MenuRepository {
       }
     })
   }
+
+  async delete(id: string) {
+    return await prisma.cardapio.delete({
+      where: {
+        id
+      }
+    })
+  }
 }
