@@ -7,4 +7,5 @@ export interface MenuRepository {
   findAll(params?: FindAllFiltersParams): Promise<FindAllMenusOutput>
   update(id: string, data: UpdateMenuInput): Promise<UpdateMenuOutput>
   duplicate(menuId: string): Promise<DuplicateMenuOutput>
+  delete(id: string): void
 }
