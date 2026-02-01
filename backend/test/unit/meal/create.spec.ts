@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { CategoriaIngrediente, CategoriaPrato, TipoRefeicao } from "../../../src/generated/prisma/enums";
 import { CreateMealUseCase } from "../../../src/use-cases/meal/create";
+import { InvalidDateError } from "../../../src/utils/errors/invalid-date-error";
 import { ResourceNotFoundError } from "../../../src/utils/errors/resource-not-found-error";
 import { InMemoryDishRepository } from "../../in-memory/in-memory-dish-repository";
 import { InMemoryIngredientRepository } from "../../in-memory/in-memory-ingredient-repository";
@@ -256,5 +257,49 @@ describe("Create Meal Use Case", () => {
     expect(breakfastMeal.meal.data).toEqual(lunchMeal.meal.data)
     expect(breakfastMeal.meal.tipo).not.toBe(lunchMeal.meal.tipo)
     expect(breakfastMeal.meal.id).not.toBe(lunchMeal.meal.id)
+  })
+
+  it("should not be able to create a meal outside period", async () => {
+    const dish = await dishRepository.create({
+      nome: "Macarrão à Bolonhesa",
+      categoria: CategoriaPrato.ALMOCO,
+    })
+
+    await Promise.all([
+      ingredientRepository.create(dish.id, {
+        nome: "Macarrão",
+        quantidade: 400,
+        unidade: "g",
+        categoria: CategoriaIngrediente.OUTROS
+      }),
+
+      ingredientRepository.create(dish.id, {
+        nome: "Molho de Tomate",
+        quantidade: 200,
+        unidade: "g",
+        categoria: CategoriaIngrediente.TEMPERO
+      })
+    ])
+
+    const menu = await menuRepository.create({
+      title: "Cardapio Maria",
+      checkIn: new Date("2026-02-01"),
+      checkOut: new Date("2026-02-05"),
+      adults: 2,
+      kids: 1,
+      restricoes: ["sem lactose"],
+      preferencias: "Prefere comidas leves"
+    })
+
+    await expect(
+      sut.execute(
+        {
+          menuId: menu.id,
+          date: new Date("2026-02-06"),
+          type: TipoRefeicao.ALMOCO,
+          dishes: [dish.id]
+        }
+      )
+    ).rejects.toBeInstanceOf(InvalidDateError)
   })
 })

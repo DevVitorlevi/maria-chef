@@ -63,42 +63,46 @@ export class InMemoryMealRepository implements MealRepository {
     this.database.splice(mealIndex, 1)
   }
 
-  async update(params: UpdateMealParams, data?: UpdateMealInput): Promise<UpdateMealOutput> {
+  async update(
+    params: UpdateMealParams,
+    data?: UpdateMealInput
+  ): Promise<UpdateMealOutput> {
     const meal = this.database.find(
-      meal => meal.id === params.mealId && meal.cardapioId === params.menuId
+      m => m.id === params.mealId && m.cardapioId === params.menuId
     )
 
     if (!meal) {
       throw new ResourceNotFoundError()
     }
 
-    Object.assign(meal, {
-      ...(data?.date !== undefined && { data: data.date }),
-      ...(data?.type !== undefined && { tipo: data.type }),
-    })
+    if (data?.date !== undefined) {
+      meal.data = data.date
+    }
+
+    if (data?.type !== undefined) {
+      meal.tipo = data.type
+    }
 
     if (data?.dishes !== undefined) {
       this.pratosRelation.set(meal.id, data.dishes)
     }
 
-    const dishIds = this.pratosRelation.get(meal.id) || []
-    const pratos: any[] = []
+    const dishIds = this.pratosRelation.get(meal.id) ?? []
 
-    if (this.dishRepository) {
-      for (const dishId of dishIds) {
-        const dish = this.dishRepository.database.find(
-          (d: any) => d.id === dishId
-        )
-        if (dish) {
-          pratos.push({
-            id: dish.id,
-            nome: dish.nome,
-            categoria: dish.categoria,
-            createdAt: dish.createdAt
-          })
-        }
-      }
-    }
+    const pratos =
+      this.dishRepository
+        ? dishIds
+          .map(dishId =>
+            this.dishRepository!.database.find((d: { id: string; }) => d.id === dishId)
+          )
+          .filter(Boolean)
+          .map(dish => ({
+            id: dish!.id,
+            nome: dish!.nome,
+            categoria: dish!.categoria,
+            createdAt: dish!.createdAt,
+          }))
+        : []
 
     return {
       meal: {
@@ -107,8 +111,8 @@ export class InMemoryMealRepository implements MealRepository {
         data: meal.data,
         tipo: meal.tipo,
         pratos,
-        createdAt: meal.createdAt
-      }
+        createdAt: meal.createdAt,
+      },
     }
   }
 }
