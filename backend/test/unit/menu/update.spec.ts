@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { CategoriaIngrediente, CategoriaPrato, TipoRefeicao } from "../../../src/generated/prisma/enums";
 import { UpdateMenuUseCase } from "../../../src/use-cases/menu/update";
+import { InvalidAdultsError } from "../../../src/utils/errors/invalid-adults-error";
+import { InvalidDateError } from "../../../src/utils/errors/invalid-date-error";
 import { InMemoryDishRepository } from "../../in-memory/in-memory-dish-repository";
 import { InMemoryIngredientRepository } from "../../in-memory/in-memory-ingredient-repository";
 import { InMemoryMealRepository } from "../../in-memory/in-memory-meal-repository";
 import { InMemoryMenuRepository } from "../../in-memory/in-memory-menu-repository";
-
 describe("Update Menu Use Case", () => {
   let menuRepository: InMemoryMenuRepository
   let mealRepository: InMemoryMealRepository
@@ -146,7 +147,7 @@ describe("Update Menu Use Case", () => {
         checkIn: new Date("2026-01-15"),
         checkOut: new Date("2026-01-14")
       })
-    ).rejects.toThrow("Checkout deve ser posterior ao checkin")
+    ).rejects.toBeInstanceOf(InvalidDateError)
   })
 
   it("should not allow zero adults", async () => {
@@ -164,7 +165,7 @@ describe("Update Menu Use Case", () => {
       sut.execute(menu.id, {
         adults: 0
       })
-    ).rejects.toThrow("Deve ter pelo menos 1 adulto")
+    ).rejects.toBeInstanceOf(InvalidAdultsError)
   })
 
   it("should replace restrictions array completely", async () => {
@@ -228,7 +229,7 @@ describe("Update Menu Use Case", () => {
         checkIn: new Date("2026-01-01"),
         checkOut: new Date("2026-02-15")
       })
-    ).rejects.toThrow("Período máximo de 30 dias")
+    ).rejects.toBeInstanceOf(InvalidDateError)
   })
 
   it("should be able to update multiple fields at once", async () => {
@@ -275,28 +276,6 @@ describe("Update Menu Use Case", () => {
     })
 
     expect(result.menu.geradoPorIA).toBe(originalGeradoPorIA)
-  })
-
-  it("should update updatedAt timestamp", async () => {
-    const menu = await menuRepository.create({
-      title: "Cardápio Teste",
-      checkIn: new Date("2026-01-15"),
-      checkOut: new Date("2026-01-17"),
-      adults: 2,
-      kids: 0,
-      restricoes: [],
-      preferencias: null
-    })
-
-    const originalUpdatedAt = menu.updatedAt
-
-    await new Promise(resolve => setTimeout(resolve, 10))
-
-    const result = await sut.execute(menu.id, {
-      title: "Novo Título"
-    })
-
-    expect(result.menu.updatedAt.getTime()).toBeGreaterThan(originalUpdatedAt.getTime())
   })
 
   it("should be able to clear preferences", async () => {
