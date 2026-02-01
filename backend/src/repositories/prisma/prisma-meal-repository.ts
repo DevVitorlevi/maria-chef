@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import type { CreateMealInput, DeleteMealsParams } from "../DTOs/meal.dtos"
+import type { CreateMealInput, DeleteMealsParams, UpdateMealInput, UpdateMealParams } from "../DTOs/meal.dtos"
 import type { MealRepository } from "../meal-repository"
 
 export class PrismaMealRepository implements MealRepository {
@@ -31,5 +31,44 @@ export class PrismaMealRepository implements MealRepository {
       }
     })
 
+  }
+
+  async update(params: UpdateMealParams, data?: UpdateMealInput) {
+    const meal = await prisma.refeicao.update({
+      where: {
+        id: params.mealId,
+        cardapioId: params.menuId
+      },
+      data: {
+        ...(data?.date !== undefined && { data: data.date }),
+        ...(data?.type !== undefined && { tipo: data.type }),
+        ...(data?.dishes !== undefined && {
+          pratos: {
+            set: data.dishes.map(dishId => ({ id: dishId }))
+          }
+        })
+      },
+      include: {
+        pratos: {
+          select: {
+            id: true,
+            nome: true,
+            categoria: true,
+            createdAt: true
+          }
+        }
+      }
+    })
+
+    return {
+      meal: {
+        id: meal.id,
+        cardapioId: meal.cardapioId,
+        data: meal.data,
+        tipo: meal.tipo,
+        pratos: meal.pratos,
+        createdAt: meal.createdAt
+      }
+    }
   }
 }
