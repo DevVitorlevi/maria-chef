@@ -1,4 +1,4 @@
-import type { CategoriaPrato, Refeicao, TipoRefeicao } from "@/generated/prisma/client"
+import type { CategoriaPrato, TipoRefeicao } from "@/generated/prisma/client"
 export interface CreateMenuInput {
   title: string
   checkIn: Date
@@ -37,7 +37,19 @@ export interface FindByIdMenuOutput {
     restricoes: string[]
     preferencias: string | null
     geradoPorIA: boolean
-    refeicoes: Refeicao[]
+    refeicoes: Array<{
+      id: string
+      cardapioId: string
+      data: Date
+      tipo: TipoRefeicao
+      pratos: Array<{
+        id: string
+        nome: string
+        categoria: CategoriaPrato
+        createdAt: Date
+      }>
+      createdAt: Date
+    }>
     createdAt: Date
     updatedAt: Date
   }
