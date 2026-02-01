@@ -16,7 +16,7 @@ export async function duplicate(request: FastifyRequest, reply: FastifyReply) {
     const { cardapio } = await duplicateMenuUseCase.execute({ menuId })
 
     return reply.status(200).send({
-      message: " Duplicated Menu",
+      message: "Duplicated Menu",
       cardapio
     })
   } catch (error) {
