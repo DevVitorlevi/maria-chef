@@ -11,15 +11,6 @@ const suggestsMenuAIParamsSchema = z.object({
 const suggestsMenuAIBodySchema = z.object({
   type: z.nativeEnum(TipoRefeicao),
   date: z.coerce.date(),
-  context: z.object({
-    title: z.string(),
-    checkin: z.coerce.date(),
-    checkout: z.coerce.date(),
-    adults: z.number().int().nonnegative(),
-    kids: z.number().int().nonnegative(),
-    restricoes: z.array(z.string()),
-    preferencias: z.string().optional(),
-  }),
 })
 
 export async function suggests(
@@ -28,35 +19,24 @@ export async function suggests(
 ) {
   try {
     const { menuId } = suggestsMenuAIParamsSchema.parse(request.params)
-    const { type, date, context } =
-      suggestsMenuAIBodySchema.parse(request.body)
+    const { type, date } = suggestsMenuAIBodySchema.parse(request.body)
 
     const menuAISuggestsUseCase = makeMenuAISuggestsUseCase()
 
     const suggestions = await menuAISuggestsUseCase.execute(
       { menuId },
-      {
-        type,
-        date,
-        context: {
-          id: menuId,
-          title: context.title,
-          checkin: context.checkin,
-          checkout: context.checkout,
-          adults: context.adults,
-          kids: context.kids,
-          restricoes: context.restricoes,
-          ...(context.preferencias && {
-            preferencias: context.preferencias,
-          }),
-        },
-      },
+      { type, date },
     )
 
     return reply.status(200).send(suggestions)
   } catch (error) {
+
     if (error instanceof ResourceNotFoundError) {
       return reply.status(404).send({ message: error.message })
+    }
+
+    if (error instanceof Error && error.message === "Serviço de IA temporariamente indisponível") {
+      return reply.status(503).send({ message: error.message })
     }
 
     if (error instanceof Error) {
