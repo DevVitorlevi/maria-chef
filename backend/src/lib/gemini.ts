@@ -1,17 +1,15 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
-import { env } from '@/env'
+import { GoogleGenAI } from "@google/genai"
+import { env } from "@/env"
 
-if (!env.GEMINI_API_KEY) {
-  throw new Error('GEMINI_API_KEY não configurada no .env')
-}
-
-export const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY)
-
-export const model = genAI.getGenerativeModel({
-  model: env.GEMINI_MODEL || 'gemini-pro',
+export const ai = new GoogleGenAI({
+  apiKey: env.GEMINI_API_KEY
 })
 
-export const generationConfig = {
-  maxOutputTokens: env.GEMINI_MAX_TOKENS || 2048,
-  temperature: env.GEMINI_TEMPERATURE || 0.7,
+export const GEMINI_CONFIG = {
+  model: env.GEMINI_MODEL,
+  config: {
+    temperature: env.GEMINI_TEMPERATURE,
+    maxOutputTokens: env.GEMINI_MAX_TOKENS,
+    responseMimeType: "application/json",
+  }
 }
