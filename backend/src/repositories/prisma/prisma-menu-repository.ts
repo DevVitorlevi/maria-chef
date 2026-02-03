@@ -22,16 +22,16 @@ export class PrismaMenuRepository implements MenuRepository {
   }
 
   async findById(menuId: string) {
-    const menu = await prisma.cardapio.findUnique({
-      where: {
-        id: menuId
-      },
+    return prisma.cardapio.findUnique({
+      where: { id: menuId },
       include: {
-        refeicoes: true
+        refeicoes: {
+          include: {
+            pratos: true
+          }
+        }
       }
     })
-
-    return menu
   }
 
   async findAll(params?: FindAllFiltersParams) {
