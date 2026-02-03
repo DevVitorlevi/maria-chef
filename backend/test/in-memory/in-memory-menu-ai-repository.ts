@@ -1,16 +1,14 @@
+import type { Meal } from "@/@types/menu"
 import type { TipoRefeicao } from "@/generated/prisma/enums"
 import type {
   DishSuggestions,
+  MenuContext,
   SuggestDishesInput,
-  SuggestDishesParams,
 } from "@/repositories/DTOs/ai.dtos"
 import type { MenuAiRepository } from "@/repositories/menu-ai-repository"
 
 export class InMemoryMenuAiRepository implements MenuAiRepository {
-  async suggests(
-    _params: SuggestDishesParams,
-    data: SuggestDishesInput
-  ): Promise<DishSuggestions> {
+  async suggests(data: SuggestDishesInput, context: MenuContext, meals: Meal[]): Promise<DishSuggestions> {
     const mockSuggestions: Record<TipoRefeicao, string[]> = {
       CAFE: [
         "Tapioca de queijo vegano",
@@ -39,51 +37,50 @@ export class InMemoryMenuAiRepository implements MenuAiRepository {
 
     let suggestions = [...mockSuggestions[data.type]]
 
-    if (data.context.restricoes.includes("sem_lactose")) {
+    if (context.restricoes.includes("sem_lactose")) {
       suggestions = suggestions.filter(
         s => !s.toLowerCase().includes("queijo") || s.includes("vegano")
       )
     }
 
-    if (data.context.restricoes.includes("vegetariano")) {
+    if (context.restricoes.includes("vegetariano")) {
       suggestions = suggestions.filter(
         s => !s.toLowerCase().includes("peixe")
       )
     }
 
-    if (data.context.restricoes.includes("sem_gluten")) {
+    if (context.restricoes.includes("sem_gluten")) {
       suggestions = suggestions.filter(
         s => !s.toLowerCase().includes("pão")
       )
     }
 
-    const pratosExistentes = data.refeicoes.flatMap(r =>
-      r.pratos.map(p => p.nome.toLowerCase())
+    const pratosExistentes = meals.flatMap(meal =>
+      meal.pratos.map(prato => prato.nome.toLowerCase())
     )
 
     suggestions = suggestions.filter(
       s => !pratosExistentes.includes(s.toLowerCase())
     )
 
-    const context: DishSuggestions["context"] = {
-      menu: data.context.title,
-      type: data.type,
-      people: {
-        adults: data.context.adults,
-        kids: data.context.kids,
-        total: data.context.adults + data.context.kids,
-      },
-      restricoes: data.context.restricoes,
-      ...(data.context.preferencias && {
-        preferencias: data.context.preferencias,
-      }),
-      ...(data.date && { date: data.date }),
-    }
-
     return {
       suggestions,
-      context,
-      notes: `Sugestões mockadas para ${data.type}. Total de pessoas: ${data.context.adults + data.context.kids
+      context:
+      {
+        menu: context.title,
+        type: data.type,
+        people: {
+          adults: context.adults,
+          kids: context.kids,
+          total: context.adults + context.kids,
+        },
+        restricoes: context.restricoes,
+        ...(context.preferencias && {
+          preferencias: context.preferencias,
+        }),
+        ...(data.date && { date: data.date }),
+      },
+      notes: `Sugestões mockadas para ${data.type}. Total de pessoas: ${context.adults + context.kids
         }`,
     }
   }
