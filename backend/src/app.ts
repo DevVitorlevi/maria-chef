@@ -4,6 +4,7 @@ import z, { ZodError } from "zod";
 import { dishRoutes } from "./http/routes/dish.routes";
 import { ingredientroutes } from "./http/routes/ingredient.routes";
 import { mealRoutes } from "./http/routes/meal.routes";
+import { menuAIRoutes } from "./http/routes/menu-ai.routes";
 import { menuRoutes } from "./http/routes/menu.routes";
 export const app = fastify();
 
@@ -17,6 +18,7 @@ app.register(dishRoutes)
 app.register(ingredientroutes)
 app.register(menuRoutes)
 app.register(mealRoutes)
+app.register(menuAIRoutes)
 
 app.setErrorHandler((error, _, reply) => {
   if (error instanceof ZodError) {
