@@ -1,5 +1,6 @@
 import type {
   DishSuggestions,
+  MenuContext,
   SuggestDishesInput,
   SuggestDishesParams,
 } from "@/repositories/DTOs/ai.dtos"
@@ -15,7 +16,7 @@ export class MenuAiSuggestsUseCase {
 
   async execute(
     params: SuggestDishesParams,
-    data: Omit<SuggestDishesInput, "refeicoes">,
+    input: SuggestDishesInput,
   ): Promise<DishSuggestions> {
     const menu = await this.menuRepository.findById(params.menuId)
 
@@ -23,16 +24,19 @@ export class MenuAiSuggestsUseCase {
       throw new ResourceNotFoundError()
     }
 
-    const dishSuggestions = await this.menuAIRepository.suggests(
-      { menuId: params.menuId },
-      {
-        type: data.type,
-        context: data.context,
-        ...(data.date && { date: data.date }),
-        refeicoes: menu.refeicoes,
-      },
-    )
+    const context: MenuContext = {
+      id: menu.id,
+      title: menu.titulo,
+      adults: menu.adultos,
+      kids: menu.criancas,
+      restricoes: menu.restricoes,
+      preferencias: menu.preferencias ?? undefined,
+      checkin: menu.checkin,
+      checkout: menu.checkout,
+    }
 
-    return dishSuggestions
+    const suggestions = await this.menuAIRepository.suggests(input, context, menu.refeicoes)
+
+    return suggestions
   }
 }
