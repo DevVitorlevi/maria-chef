@@ -70,7 +70,10 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
   private buildPrompt(type: TipoRefeicao, context: MenuContext, date: Date, meals: Meal[]): string {
     const dataFormatada = date.toLocaleDateString("pt-BR")
     const refeicoesExistentes = meals.length > 0
-      ? meals.map(m => `${TIPO_TEXTO[m.tipo]} (${m.data.toLocaleDateString("pt-BR")})`).join(", ")
+      ? meals.map(m => {
+        const pratos = m.pratos?.map(p => p.nome).join(", ") || "Sem pratos cadastrados"
+        return `${TIPO_TEXTO[m.tipo]} (${m.data.toLocaleDateString("pt-BR")}): ${pratos}`
+      }).join(" | ")
       : "Nenhuma"
 
     return `Você é um chef especializado em casas de praia.
