@@ -4,7 +4,12 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
-    name: "unit",
-    globals: true,
+    name: "integration",
+    include: ['test/integration/*.spec.ts']
+  },
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
   },
 });

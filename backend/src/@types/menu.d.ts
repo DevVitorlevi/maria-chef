@@ -12,17 +12,19 @@ export type Menu = {
   geradoPorIA: boolean
   createdAt: Date
   updatedAt: Date
-  refeicoes: Array<{
+  refeicoes: Meal[]
+}
+export type Meal = {
+  id: string
+  cardapioId: string
+  data: Date
+  tipo: TipoRefeicao
+  pratos: Array<{
     id: string
-    cardapioId: string
-    data: Date
-    tipo: TipoRefeicao
-    pratos: Array<{
-      id: string
-      nome: string
-      categoria: CategoriaPrato
-      createdAt: Date
-    }>
+    nome: string
+    categoria: CategoriaPrato
     createdAt: Date
   }>
+  createdAt: Date
 }
+

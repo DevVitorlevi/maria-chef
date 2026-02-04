@@ -10,6 +10,7 @@
     "test:watch": "vitest --config ./vitest.config.ts",
     "test:e2e:prepare": "dotenv -e .env.test -- npx prisma migrate deploy",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "test:integration": "vitest --config ./vitest.config.integration.ts",
     "test:e2e:watch": "vitest --config ./vitest.config.e2e.ts"
   },
   "keywords": [],
@@ -18,7 +19,7 @@
   "description": "",
   "dependencies": {
     "@fastify/cors": "^11.2.0",
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^1.39.0",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "cors": "^2.8.5",
