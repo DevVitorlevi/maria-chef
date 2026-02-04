@@ -10,6 +10,7 @@
     "test:watch": "vitest --config ./vitest.config.ts",
     "test:e2e:prepare": "dotenv -e .env.test -- npx prisma migrate deploy",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
+    "test:integration": "vitest --config ./vitest.config.integration.ts",
     "test:e2e:watch": "vitest --config ./vitest.config.e2e.ts"
   },
   "keywords": [],
