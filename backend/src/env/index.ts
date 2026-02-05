@@ -5,10 +5,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(3333),
   DATABASE_URL: z.string(),
-  GEMINI_API_KEY: z.string(),
-  GEMINI_MODEL: z.string().default('gemini-1.5-flash-latest'),
-  GEMINI_MAX_TOKENS: z.coerce.number().default(2048),
-  GEMINI_TEMPERATURE: z.coerce.number().default(0.7),
+  GROQ_API_KEY: z.string(),
+  GROQ_AI_MODEL: z.string(),
 })
 
 const _env = envSchema.safeParse(process.env)
