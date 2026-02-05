@@ -1,8 +1,14 @@
 import type { Meal } from "@/@types/menu"
 import { TipoRefeicao } from "@/generated/prisma/enums"
-import { ai, GEMINI_CONFIG } from "@/lib/gemini"
+import { groq, GROQ_CONFIG } from "@/lib/groq"
 import { z } from "zod"
-import type { DishSuggestions, MenuContext, SuggestDishesInput } from "../DTOs/ai.dtos"
+
+import type {
+  DishSuggestions,
+  MenuContext,
+  SuggestDishesInput
+} from "../DTOs/ai.dtos"
+
 import type { MenuAiRepository } from "../menu-ai-repository"
 
 const TIPO_TEXTO: Record<TipoRefeicao, string> = {
@@ -11,26 +17,33 @@ const TIPO_TEXTO: Record<TipoRefeicao, string> = {
   JANTAR: "JANTAR",
 }
 
-const geminiResponseSchema = z.object({
-  sugestoes: z.array(z.string()),
-  observacoes: z.string()
+const groqResponseSchema = z.object({
+  sugestoes: z.array(z.string()).min(1),
+  observacoes: z.string().min(1),
 })
 
-type GeminiResponse = z.infer<typeof geminiResponseSchema>
+type GroqResponse = z.infer<typeof groqResponseSchema>
 
 export class PrismaMenuAIRepository implements MenuAiRepository {
+
   async suggests(
     data: SuggestDishesInput,
     context: MenuContext,
     meals: Meal[]
   ): Promise<DishSuggestions> {
-    const prompt = this.buildPrompt(data.type, context, data.date, meals)
-    const aiResponse = await this.callGemini(prompt)
+
+    const prompt = this.buildPrompt(
+      data.type,
+      context,
+      data.date,
+      meals
+    )
+
+    const aiResponse = await this.callGroq(prompt)
 
     return {
       suggestions: aiResponse.sugestoes,
-      context:
-      {
+      context: {
         menu: context.title,
         type: data.type,
         people: {
@@ -48,48 +61,103 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
     }
   }
 
-  private async callGemini(prompt: string): Promise<GeminiResponse> {
+  private async callGroq(prompt: string): Promise<GroqResponse> {
     try {
-      const response = await ai.models.generateContent({
-        model: GEMINI_CONFIG.model,
-        contents: prompt,
-        config: GEMINI_CONFIG.config
+      const completion = await groq.chat.completions.create({
+        model: GROQ_CONFIG.model,
+        temperature: GROQ_CONFIG.temperature,
+        max_tokens: GROQ_CONFIG.max_tokens,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Você é um chef especialista em cardápios de casas de praia. Responda SOMENTE em JSON válido.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
       })
 
-      const text = response.text
+      const text = completion.choices?.[0]?.message?.content
 
-      if (!text) throw new Error("IA retornou vazio")
+      if (!text) {
+        throw new Error("Groq retornou vazio")
+      }
 
-      return geminiResponseSchema.parse(JSON.parse(text))
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+
+      if (!jsonMatch) {
+        throw new Error("Resposta não contém JSON")
+      }
+
+      const parsed = JSON.parse(jsonMatch[0])
+
+      if (Array.isArray(parsed.sugestoes)) {
+        parsed.sugestoes = parsed.sugestoes.map((s: any) =>
+          typeof s === "string"
+            ? s
+            : s?.nome ?? String(s)
+        )
+      }
+
+      return groqResponseSchema.parse(parsed)
+
     } catch (error: any) {
-      console.error("ERRO_GEMINI_3:", error.message || error)
+      console.error("ERRO_GROQ_AI:", error?.message || error)
       throw new Error("Serviço de IA temporariamente indisponível")
     }
   }
 
-  private buildPrompt(type: TipoRefeicao, context: MenuContext, date: Date, meals: Meal[]): string {
+  private buildPrompt(
+    type: TipoRefeicao,
+    context: MenuContext,
+    date: Date,
+    meals: Meal[]
+  ): string {
+
     const dataFormatada = date.toLocaleDateString("pt-BR")
-    const refeicoesExistentes = meals.length > 0
-      ? meals.map(m => {
-        const pratos = m.pratos?.map(p => p.nome).join(", ") || "Sem pratos cadastrados"
-        return `${TIPO_TEXTO[m.tipo]} (${m.data.toLocaleDateString("pt-BR")}): ${pratos}`
-      }).join(" | ")
-      : "Nenhuma"
 
-    return `Você é um chef especializado em casas de praia.
-    CONTEXTO: Cardápio "${context.title}", para ${context.adults} adultos e ${context.kids} crianças.
-    REFEIÇÕES JÁ EXISTENTES: ${refeicoesExistentes}
-    
-    TAREFA: Sugira pratos criativos para o ${TIPO_TEXTO[type]} do dia ${dataFormatada}.
-    RESTRIÇÕES ALIMENTARES: ${context.restricoes.join(", ") || "Nenhuma"}
-    PREFERÊNCIAS DO CLIENTE: ${context.preferencias || "Nenhuma"}
+    const refeicoesExistentes =
+      meals.length > 0
+        ? meals.map(m => {
+          const pratos =
+            m.pratos?.map(p => p.nome).join(", ")
+            || "Sem pratos cadastrados"
 
-    REQUISITO: Não repita pratos que já existam nas refeições listadas acima.
-    FORMATO DE RESPOSTA (JSON):
-    {
-      "sugestoes": ["Nome do Prato 1", "Nome do Prato 2", "Nome do Prato 3"],
-      "observacoes": "Explicação rápida de por que escolheu esses pratos."
+          return `${TIPO_TEXTO[m.tipo]} (${m.data.toLocaleDateString("pt-BR")}): ${pratos}`
+        }).join(" | ")
+        : "Nenhuma"
 
-    }`
+    return `
+CONTEXTO:
+Cardápio "${context.title}"
+Pessoas: ${context.adults} adultos e ${context.kids} crianças
+
+REFEIÇÕES JÁ EXISTENTES:
+${refeicoesExistentes}
+
+TAREFA:
+Sugira 3 pratos criativos para o ${TIPO_TEXTO[type]} do dia ${dataFormatada}.
+
+RESTRIÇÕES:
+${context.restricoes.join(", ") || "Nenhuma"}
+
+PREFERÊNCIAS:
+${context.preferencias || "Nenhuma"}
+
+REGRAS:
+- Não repetir pratos existentes
+- Adequado para casa de praia
+- Considerar crianças
+
+RESPONDA SOMENTE EM JSON:
+
+{
+  "sugestoes": ["Prato 1", "Prato 2", "Prato 3"],
+  "observacoes": "Motivo das escolhas"
+}
+`
   }
 }
