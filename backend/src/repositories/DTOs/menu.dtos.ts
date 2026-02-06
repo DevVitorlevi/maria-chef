@@ -1,4 +1,5 @@
 import type { CategoriaPrato, TipoRefeicao } from "@/generated/prisma/client"
+
 export interface CreateMenuInput {
   title: string
   checkIn: Date
@@ -17,7 +18,7 @@ export interface CreateMenuOutput {
     adultos: number
     criancas: number
     restricoes: string[]
-    preferencias: string | null
+    preferencias: string
     geradoPorIA: boolean
     createdAt: Date
     updatedAt: Date
@@ -35,7 +36,7 @@ export interface FindByIdMenuOutput {
     adultos: number
     criancas: number
     restricoes: string[]
-    preferencias: string | null
+    preferencias: string
     geradoPorIA: boolean
     refeicoes: Array<{
       id: string
@@ -69,7 +70,7 @@ export interface FindAllMenusOutput {
     adultos: number
     criancas: number
     restricoes: string[]
-    preferencias: string | null
+    preferencias: string
     geradoPorIA: boolean
     createdAt: Date
     updatedAt: Date
@@ -85,7 +86,7 @@ export interface UpdateMenuInput {
   adults?: number
   kids?: number
   restricoes?: string[]
-  preferencias?: string | null
+  preferencias?: string
 }
 export interface UpdateMenuOutput {
   menu: {
@@ -96,7 +97,7 @@ export interface UpdateMenuOutput {
     adultos: number
     criancas: number
     restricoes: string[]
-    preferencias: string | null
+    preferencias: string
     geradoPorIA: boolean
     createdAt: Date
     updatedAt: Date
@@ -114,7 +115,7 @@ export interface DuplicateMenuOutput {
     adultos: number
     criancas: number
     restricoes: string[]
-    preferencias: string | null
+    preferencias: string
     geradoPorIA: boolean
     createdAt: Date
     updatedAt: Date
