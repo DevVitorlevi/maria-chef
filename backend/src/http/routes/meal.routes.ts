@@ -8,5 +8,5 @@ export function mealRoutes(app: FastifyInstance) {
   app.post("/cardapio/:menuId/refeicao", create)
   app.delete("/cardapio/:menuId/refeicao/:id", deleteMeal)
   app.put("/cardapio/:menuId/refeicao/:mealId", update)
-  app.get("cardapio/:menuId/refeicao/:mealId", findById)
+  app.get("/cardapio/:menuId/refeicao/:id", findById)
 }
