@@ -1,5 +1,5 @@
 import type { Cardapio, Prato, Refeicao } from "@/generated/prisma/client";
-import type { CreateMenuInput, FindAllFiltersParams, FindAllMenusOutput, UpdateMenuInput } from "@/repositories/DTOs/menu.dtos";
+import type { CreateMenuInput, DuplicateMenuOutput, FindAllFiltersParams, FindAllMenusOutput, UpdateMenuInput } from "@/repositories/DTOs/menu.dtos";
 import type { MenuRepository } from "@/repositories/menu-repository";
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
 import { randomUUID } from "node:crypto";
@@ -23,23 +23,19 @@ export class InMemoryMenuRepository implements MenuRepository {
       adultos: data.adults,
       criancas: data.kids ?? 0,
       restricoes: data.restricoes ?? [],
-      preferencias: data.preferencias ?? null,
+      preferencias: data.preferencias ?? "",
       geradoPorIA: false,
       createdAt: new Date(),
       updatedAt: new Date()
     }
 
     this.database.push(menu)
-
     return menu
   }
 
   async findById(menuId: string) {
     const menu = this.database.find(menu => menu.id === menuId)
-
-    if (!menu) {
-      return null
-    }
+    if (!menu) return null
 
     const refeicoes = this.mealRepository
       ? await Promise.all(
@@ -49,12 +45,10 @@ export class InMemoryMenuRepository implements MenuRepository {
             const pratoIds = this.mealRepository!.pratosRelation.get(meal.id) || []
             const pratos: Prato[] = []
 
-            if (pratoIds.length > 0 && this.mealRepository!.dishRepository) {
-              for (const pratoId of pratoIds) {
+            for (const pratoId of pratoIds) {
+              if (this.mealRepository!.dishRepository) {
                 const prato = await this.mealRepository!.dishRepository.findById(pratoId)
-                if (prato) {
-                  pratos.push(prato)
-                }
+                if (prato) pratos.push(prato)
               }
             }
 
@@ -68,7 +62,8 @@ export class InMemoryMenuRepository implements MenuRepository {
 
     return {
       ...menu,
-      refeicoes,
+      preferencias: menu.preferencias ?? "",
+      refeicoes
     }
   }
 
@@ -83,40 +78,34 @@ export class InMemoryMenuRepository implements MenuRepository {
     }
 
     if (params?.data) {
-      allMenus = allMenus.filter(menu => {
-        const dataFiltro = new Date(params.data!)
-        const checkin = new Date(menu.checkin)
-        const checkout = new Date(menu.checkout)
-
-        return dataFiltro >= checkin && dataFiltro <= checkout
-      })
+      const dataFiltro = new Date(params.data)
+      allMenus = allMenus.filter(menu =>
+        dataFiltro >= menu.checkin && dataFiltro <= menu.checkout
+      )
     }
 
     const total = allMenus.length
-    const page = params?.page || 1
-    const limit = params?.limit || 20
-    const limitCapped = Math.min(limit, 100)
+    const page = params?.page ?? 1
+    const limit = Math.min(params?.limit ?? 20, 100)
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
 
-    const startIndex = (page - 1) * limitCapped
-    const endIndex = startIndex + limitCapped
-
-    const paginatedMenus = allMenus.slice(startIndex, endIndex)
-
-    const totalPages = Math.ceil(total / limitCapped)
+    const paginatedMenus = allMenus.slice(startIndex, endIndex).map(menu => ({
+      ...menu,
+      preferencias: menu.preferencias ?? ""
+    }))
 
     return {
       menus: paginatedMenus,
       total,
       page,
-      totalPages
+      totalPages: Math.ceil(total / limit)
     }
   }
+
   async update(id: string, data: UpdateMenuInput) {
     const menu = this.database.find(menu => menu.id === id)
-
-    if (!menu) {
-      throw new Error('Cardápio não encontrado')
-    }
+    if (!menu) throw new ResourceNotFoundError()
 
     Object.assign(menu, {
       ...(data.title !== undefined && { titulo: data.title }),
@@ -130,99 +119,84 @@ export class InMemoryMenuRepository implements MenuRepository {
     })
 
     const refeicoes = this.mealRepository
-      ? this.mealRepository.database.filter(
-        meal => meal.cardapioId === id
-      )
+      ? this.mealRepository.database.filter(meal => meal.cardapioId === id)
       : []
 
     return {
       menu: {
         ...menu,
+        preferencias: menu.preferencias ?? "",
         refeicoes
       }
     }
   }
 
-  async duplicate(menuId: string) {
-    const currentMenu = await this.findById(menuId)
-
-    if (!currentMenu) {
-      throw new Error('Cardápio não encontrado')
-    }
-
-    const duplicateTitle = `${currentMenu.titulo} (cópia)`
+  async duplicate(menuId: string): Promise<DuplicateMenuOutput> {
+    const currentMenu = await this.findById(menuId);
+    if (!currentMenu) throw new ResourceNotFoundError();
 
     const duplicateMenu: Cardapio = {
       id: randomUUID(),
-      titulo: duplicateTitle,
+      titulo: `${currentMenu.titulo} (cópia)`,
       checkin: currentMenu.checkin,
       checkout: currentMenu.checkout,
       adultos: currentMenu.adultos,
       criancas: currentMenu.criancas,
-      preferencias: currentMenu.preferencias,
       restricoes: currentMenu.restricoes,
+      preferencias: currentMenu.preferencias ?? "",
       geradoPorIA: currentMenu.geradoPorIA,
       createdAt: new Date(),
-      updatedAt: new Date()
-    }
+      updatedAt: new Date(),
+    };
 
-    this.database.push(duplicateMenu)
+    this.database.push(duplicateMenu);
 
-    const duplicatedMeals = []
+    const duplicatedMeals: (Refeicao & { pratos: Prato[] })[] = [];
 
     if (this.mealRepository && currentMenu.refeicoes) {
       for (const meal of currentMenu.refeicoes) {
-        const newMealId = randomUUID()
+        const newMealId = randomUUID();
 
         const duplicatedMeal: Refeicao = {
           id: newMealId,
           cardapioId: duplicateMenu.id,
           data: meal.data,
           tipo: meal.tipo,
-          createdAt: new Date()
-        }
+          createdAt: new Date(),
+        };
 
-        this.mealRepository.database.push(duplicatedMeal)
+        this.mealRepository.database.push(duplicatedMeal);
 
-        const pratoIds = this.mealRepository.pratosRelation.get(meal.id)
-        if (pratoIds && pratoIds.length > 0) {
-          this.mealRepository.pratosRelation.set(newMealId, [...pratoIds])
-        }
+        const pratoIds = this.mealRepository.pratosRelation.get(meal.id) || [];
+        if (pratoIds.length) this.mealRepository.pratosRelation.set(newMealId, [...pratoIds]);
 
-        const pratos: Prato[] = []
-        if (pratoIds && this.mealRepository.dishRepository) {
+        const pratosForOutput: Prato[] = [];
+        if (this.dishRepository) {
           for (const pratoId of pratoIds) {
-            const prato = await this.mealRepository.dishRepository.findById(pratoId)
-            if (prato) {
-              pratos.push(prato)
-            }
+            const prato = await this.dishRepository.findById({ dishId: pratoId });
+            if (prato) pratosForOutput.push(prato);
           }
         }
 
         duplicatedMeals.push({
           ...duplicatedMeal,
-          pratos
-        })
+          pratos: pratosForOutput,
+        });
       }
     }
 
     return {
       cardapio: {
         ...duplicateMenu,
-        refeicoes: duplicatedMeals
-      }
-    }
+        preferencias: duplicateMenu.preferencias ?? "",
+        refeicoes: duplicatedMeals,
+      },
+    };
   }
 
   async delete(id: string) {
-    const menuIndex = this.database.findIndex(
-      menu => menu.id === id
-    )
-
-    if (menuIndex === -1) {
-      throw new ResourceNotFoundError()
-    }
-
-    this.database.splice(menuIndex, 1)
+    const index = this.database.findIndex(menu => menu.id === id)
+    if (index === -1) throw new ResourceNotFoundError()
+    this.database.splice(index, 1)
   }
 }

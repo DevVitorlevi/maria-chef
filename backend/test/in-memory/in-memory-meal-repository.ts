@@ -1,5 +1,5 @@
-import type { Prato, Refeicao } from "@/generated/prisma/client";
-import type { CreateMealInput, DeleteMealsParams, UpdateMealInput, UpdateMealOutput, UpdateMealParams } from "@/repositories/DTOs/meal.dtos";
+import { CategoriaPrato, type Prato, type Refeicao } from "@/generated/prisma/client";
+import type { CreateMealInput, DeleteMealsParams, FindByIdMealOutput, FindByIdMealParams, UpdateMealInput, UpdateMealOutput, UpdateMealParams } from "@/repositories/DTOs/meal.dtos";
 import type { MealRepository } from "@/repositories/meal-repository";
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
 import { randomUUID } from "node:crypto";
@@ -115,4 +115,37 @@ export class InMemoryMealRepository implements MealRepository {
       },
     }
   }
+
+  async findById(params: FindByIdMealParams): Promise<FindByIdMealOutput> {
+    const meal = this.database.find(m => m.id === params.id && m.cardapioId === params.menuId)
+    if (!meal) throw new ResourceNotFoundError()
+
+    const dishIds = this.pratosRelation.get(meal.id) ?? []
+
+    const pratos = await Promise.all(
+      dishIds.map(async (dishId) => {
+        const dish = this.dishRepository
+          ? await this.dishRepository.findById(dishId)
+          : { id: dishId, nome: "Prato Desconhecido", categoria: CategoriaPrato.ALMOCO, createdAt: new Date(), ingredientes: [] }
+
+        return {
+          id: dish.id,
+          nome: dish.nome,
+          categoria: dish.categoria,
+          createdAt: dish.createdAt,
+          ingredientes: (dish.ingredientes ?? []).map((ing: { id: any; pratoId: any; nome: any; quantidade: any; unidade: any; categoria: any; }) => ({
+            id: ing.id,
+            pratoId: ing.pratoId,
+            nome: ing.nome,
+            quantidade: ing.quantidade,
+            unidade: ing.unidade,
+            categoria: ing.categoria,
+          })),
+        }
+      })
+    )
+
+    return { meal: { ...meal, pratos } }
+  }
+
 }
