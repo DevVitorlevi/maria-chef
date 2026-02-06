@@ -30,7 +30,12 @@ export class InMemoryMenuRepository implements MenuRepository {
     }
 
     this.database.push(menu)
-    return menu
+
+
+    return {
+      ...menu,
+      refeicoes: []
+    }
   }
 
   async findById(menuId: string) {
