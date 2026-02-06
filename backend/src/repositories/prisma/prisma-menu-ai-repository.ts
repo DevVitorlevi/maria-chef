@@ -34,7 +34,7 @@ const groqResponseSchema = z.object({
         })
       ).min(1),
     })
-  ).min(3).max(3),
+  ).min(1),
   observacoes: z.string().min(1),
 })
 
@@ -175,18 +175,19 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
 
     return `
 Você é uma Chef de Cozinha em Icapuí, Ceará.
-Crie 3 sugestões de pratos para ${TIPO_TEXTO[type]} no dia ${date.toLocaleDateString("pt-BR")}.
+Crie sugestões de pratos para ${TIPO_TEXTO[type]} no dia ${date.toLocaleDateString("pt-BR")}.
 
 REGRAS CRÍTICAS:
 1. JSON APENAS.
 2. CATEGORIA DO PRATO: [CAFE_MANHA, ALMOCO, JANTAR, SOBREMESA, LANCHE].
 3. CATEGORIA DO INGREDIENTE: [HORTIFRUTI, PROTEINA, LATICINIO, GRAOS, TEMPERO, BEBIDA, CONGELADO, PADARIA, HIGIENE, OUTROS].
 4. UNIDADE E NOME NÃO PODEM SER VAZIOS.
-5. PROIBIDO REPETIR: [${nomesJaUsados.join(", ")}].
+5. INGREDIENTES: Liste TODOS os ingredientes necessários para a receita, sem limite de quantidade de itens. Seja detalhista.
+6. PROIBIDO REPETIR: [${nomesJaUsados.join(", ")}].
 
 PÚBLICO: ${context.adults} adultos e ${context.kids} crianças.
 RESTRIÇÕES: ${context.restricoes.join(", ")}.
-ESTILO: Comida de praia, leve e tropical.
+ESTILO: Comida de praia, leve e tropical, valorizando ingredientes locais.
 
 FORMATO:
 {
@@ -195,11 +196,13 @@ FORMATO:
       "nome": "Nome do Prato",
       "categoria": "ALMOCO",
       "ingredientes": [
-        {"nome": "Item", "quantidade": 500, "unidade": "g", "categoria": "PROTEINA"}
+        {"nome": "Item 1", "quantidade": 500, "unidade": "g", "categoria": "PROTEINA"},
+        {"nome": "Item 2", "quantidade": 2, "unidade": "un", "categoria": "HORTIFRUTI"},
+        ... (liste quantos forem necessários)
       ]
     }
   ],
-  "observacoes": "Dica do chef"
+  "observacoes": "Dica do chef sobre o preparo ou harmonização"
 }`;
   }
 }
