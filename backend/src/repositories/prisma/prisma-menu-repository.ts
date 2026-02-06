@@ -1,7 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
-import type { CreateMenuInput, FindAllFiltersParams, UpdateMenuInput } from "../DTOs/menu.dtos";
+import type { CreateMenuInput, FindAllFiltersParams, FindAllMenusOutput, FindByIdMenuOutput, UpdateMenuInput } from "../DTOs/menu.dtos";
 import type { MenuRepository } from "../menu-repository";
 
 export class PrismaMenuRepository implements MenuRepository {
@@ -21,59 +21,100 @@ export class PrismaMenuRepository implements MenuRepository {
     return menu
   }
 
-  async findById(menuId: string) {
-    return prisma.cardapio.findUnique({
+  async findById(menuId: string): Promise<FindByIdMenuOutput["menu"] | null> {
+    const menu = await prisma.cardapio.findUnique({
       where: { id: menuId },
       include: {
         refeicoes: {
           include: {
-            pratos: true
-          }
-        }
-      }
-    })
+            pratos: true,
+          },
+        },
+      },
+    });
+
+    if (!menu) return null;
+
+    const preferencias = menu.preferencias ?? "";
+
+    const refeicoes = menu.refeicoes.map(r => ({
+      id: r.id,
+      cardapioId: r.cardapioId,
+      data: r.data,
+      tipo: r.tipo,
+      createdAt: r.createdAt,
+      pratos: r.pratos.map(p => ({
+        id: p.id,
+        nome: p.nome,
+        categoria: p.categoria,
+        createdAt: p.createdAt,
+      })),
+    }));
+
+    return {
+      id: menu.id,
+      titulo: menu.titulo,
+      checkin: menu.checkin,
+      checkout: menu.checkout,
+      adultos: menu.adultos,
+      criancas: menu.criancas,
+      restricoes: menu.restricoes ?? [],
+      preferencias,
+      geradoPorIA: menu.geradoPorIA,
+      refeicoes,
+      createdAt: menu.createdAt,
+      updatedAt: menu.updatedAt,
+    };
   }
 
-  async findAll(params?: FindAllFiltersParams) {
-    const page = params?.page || 1
-    const limit = params?.limit || 20
-    const limitCapped = Math.min(limit, 100)
-    const skip = (page - 1) * limitCapped
 
-    const where: Prisma.CardapioWhereInput = {}
+  async findAll(params?: FindAllFiltersParams): Promise<FindAllMenusOutput> {
+    const page = params?.page || 1;
+    const limit = params?.limit || 20;
+    const limitCapped = Math.min(limit, 100);
+    const skip = (page - 1) * limitCapped;
+
+    const where: Prisma.CardapioWhereInput = {};
 
     if (params?.titulo) {
       where.titulo = {
         contains: params.titulo,
         mode: 'insensitive'
-      }
+      };
     }
+
     if (params?.data) {
-      const dataFiltro = new Date(params.data)
+      const dataFiltro = new Date(params.data);
       where.AND = [
         { checkin: { lte: dataFiltro } },
         { checkout: { gte: dataFiltro } }
-      ]
+      ];
     }
 
-    const [menus, total] = await Promise.all([
+    const [menusRaw, total] = await Promise.all([
       prisma.cardapio.findMany({
         where,
         skip,
         take: limitCapped
       }),
       prisma.cardapio.count({ where })
-    ])
+    ]);
 
-    const totalPages = Math.ceil(total / limitCapped)
+    const menus = menusRaw.map(menu => ({
+      ...menu,
+      preferencias: menu.preferencias ?? ""
+    }));
+
+    const totalPages = Math.ceil(total / limitCapped);
 
     return {
       menus,
       total,
       page,
       totalPages
-    }
+    };
   }
+
 
   async update(id: string, data: UpdateMenuInput) {
     const menu = await prisma.cardapio.update({
@@ -88,11 +129,25 @@ export class PrismaMenuRepository implements MenuRepository {
         ...(data.preferencias !== undefined && { preferencias: data.preferencias }),
       },
       include: {
-        refeicoes: true
+        refeicoes: {
+          include: { pratos: true }
+        }
       }
-    })
+    });
 
-    return { menu }
+    const menuNormalized = {
+      ...menu,
+      preferencias: menu.preferencias ?? "",
+      refeicoes: menu.refeicoes.map(r => ({
+        ...r,
+        pratos: r.pratos.map(p => ({
+          ...p,
+          categoria: p.categoria
+        }))
+      }))
+    };
+
+    return { menu: menuNormalized };
   }
 
   async duplicate(menuId: string) {
@@ -101,16 +156,12 @@ export class PrismaMenuRepository implements MenuRepository {
         where: { id: menuId },
         include: {
           refeicoes: {
-            include: {
-              pratos: true
-            }
+            include: { pratos: true }
           }
         }
-      })
+      });
 
-      if (!currentMenu) {
-        throw new ResourceNotFoundError()
-      }
+      if (!currentMenu) throw new ResourceNotFoundError();
 
       const duplicatedMenu = await tx.cardapio.create({
         data: {
@@ -123,7 +174,7 @@ export class PrismaMenuRepository implements MenuRepository {
           restricoes: currentMenu.restricoes,
           geradoPorIA: currentMenu.geradoPorIA,
         }
-      })
+      });
 
       for (const refeicao of currentMenu.refeicoes) {
         await tx.refeicao.create({
@@ -132,32 +183,37 @@ export class PrismaMenuRepository implements MenuRepository {
             data: refeicao.data,
             tipo: refeicao.tipo,
             pratos: {
-              connect: refeicao.pratos.map(prato => ({ id: prato.id }))
+              connect: refeicao.pratos.map(p => ({ id: p.id }))
             }
           }
-        })
+        });
       }
 
       const duplicatedMenuWithRelations = await tx.cardapio.findUnique({
         where: { id: duplicatedMenu.id },
         include: {
-          refeicoes: {
-            include: {
-              pratos: true
-            }
-          }
+          refeicoes: { include: { pratos: true } }
         }
-      })
+      });
 
-      if (!duplicatedMenuWithRelations) {
-        throw new Error('Erro ao recuperar cardápio duplicado')
-      }
+      if (!duplicatedMenuWithRelations) throw new Error("Erro ao recuperar cardápio duplicado");
 
-      return {
-        cardapio: duplicatedMenuWithRelations
-      }
-    })
+      const normalized = {
+        ...duplicatedMenuWithRelations,
+        preferencias: duplicatedMenuWithRelations.preferencias ?? "",
+        refeicoes: duplicatedMenuWithRelations.refeicoes.map(r => ({
+          ...r,
+          pratos: r.pratos.map(p => ({
+            ...p,
+            categoria: p.categoria
+          }))
+        }))
+      };
+
+      return { cardapio: normalized };
+    });
   }
+
 
   async delete(id: string) {
     return await prisma.cardapio.delete({

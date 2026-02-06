@@ -1,5 +1,5 @@
 import type { Meal } from "@/@types/menu"
-import { TipoRefeicao } from "@/generated/prisma/enums"
+import { TipoRefeicao, type CategoriaIngrediente, type CategoriaPrato } from "@/generated/prisma/enums"
 import { groq, GROQ_CONFIG } from "@/lib/groq"
 import { z } from "zod"
 
@@ -18,7 +18,20 @@ const TIPO_TEXTO: Record<TipoRefeicao, string> = {
 }
 
 const groqResponseSchema = z.object({
-  sugestoes: z.array(z.string()).min(1),
+  sugestoes: z.array(
+    z.object({
+      nome: z.string(),
+      categoria: z.string(),
+      ingredientes: z.array(
+        z.object({
+          nome: z.string(),
+          quantidade: z.number(),
+          unidade: z.string(),
+          categoria: z.string(),
+        })
+      ),
+    })
+  ),
   observacoes: z.string().min(1),
 })
 
@@ -41,24 +54,34 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
 
     const aiResponse = await this.callGroq(prompt)
 
+    const suggestions = aiResponse.sugestoes.map(dish => ({
+      nome: dish.nome,
+      categoria: dish.categoria as CategoriaPrato,
+      ingredientes: dish.ingredientes.map(ing => ({
+        nome: ing.nome,
+        quantidade: ing.quantidade,
+        unidade: ing.unidade,
+        categoria: ing.categoria as CategoriaIngrediente,
+      }))
+    }))
+
     return {
-      suggestions: aiResponse.sugestoes,
+      dishes: suggestions,
       context: {
         menu: context.title,
         type: data.type,
         people: {
           adults: context.adults,
-          kids: context.kids,
-          total: context.adults + context.kids,
+          kids: context.kids ?? 0,
+          total: context.adults + (context.kids ?? 0),
         },
         restricoes: context.restricoes,
-        ...(context.preferencias && {
-          preferencias: context.preferencias,
-        }),
+        ...(context.preferencias && { preferencias: context.preferencias }),
         ...(data.date && { date: data.date }),
       },
       notes: aiResponse.observacoes,
     }
+
   }
 
   private async callGroq(prompt: string): Promise<GroqResponse> {
@@ -71,7 +94,7 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
           {
             role: "system",
             content:
-              "Você é um chef especialista em cardápios de casas de praia. Responda SOMENTE em JSON válido.",
+              "Você é um chef especialista em cardápios de casas de praia. Responda SOMENTE em JSON válido com pratos e ingredientes.",
           },
           {
             role: "user",
@@ -81,29 +104,13 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
       })
 
       const text = completion.choices?.[0]?.message?.content
-
-      if (!text) {
-        throw new Error("Groq retornou vazio")
-      }
+      if (!text) throw new Error("Groq retornou vazio")
 
       const jsonMatch = text.match(/\{[\s\S]*\}/)
-
-      if (!jsonMatch) {
-        throw new Error("Resposta não contém JSON")
-      }
+      if (!jsonMatch) throw new Error("Resposta não contém JSON")
 
       const parsed = JSON.parse(jsonMatch[0])
-
-      if (Array.isArray(parsed.sugestoes)) {
-        parsed.sugestoes = parsed.sugestoes.map((s: any) =>
-          typeof s === "string"
-            ? s
-            : s?.nome ?? String(s)
-        )
-      }
-
       return groqResponseSchema.parse(parsed)
-
     } catch (error: any) {
       console.error("ERRO_GROQ_AI:", error?.message || error)
       throw new Error("Serviço de IA temporariamente indisponível")
@@ -118,28 +125,23 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
   ): string {
 
     const dataFormatada = date.toLocaleDateString("pt-BR")
-
-    const refeicoesExistentes =
-      meals.length > 0
-        ? meals.map(m => {
-          const pratos =
-            m.pratos?.map(p => p.nome).join(", ")
-            || "Sem pratos cadastrados"
-
-          return `${TIPO_TEXTO[m.tipo]} (${m.data.toLocaleDateString("pt-BR")}): ${pratos}`
-        }).join(" | ")
-        : "Nenhuma"
+    const refeicoesExistentes = meals.length
+      ? meals.map(m => {
+        const pratos = m.pratos?.map(p => p.nome).join(", ") || "Sem pratos cadastrados"
+        return `${TIPO_TEXTO[m.tipo]} (${m.data.toLocaleDateString("pt-BR")}): ${pratos}`
+      }).join(" | ")
+      : "Nenhuma"
 
     return `
 CONTEXTO:
 Cardápio "${context.title}"
-Pessoas: ${context.adults} adultos e ${context.kids} crianças
+Pessoas: ${context.adults} adultos e ${context.kids ?? 0} crianças
 
 REFEIÇÕES JÁ EXISTENTES:
 ${refeicoesExistentes}
 
 TAREFA:
-Sugira 3 pratos criativos para o ${TIPO_TEXTO[type]} do dia ${dataFormatada}.
+Sugira 3 pratos criativos para o ${TIPO_TEXTO[type]} do dia ${dataFormatada} e inclua os ingredientes de cada prato, quantidade e unidade.
 
 RESTRIÇÕES:
 ${context.restricoes.join(", ") || "Nenhuma"}
@@ -155,7 +157,15 @@ REGRAS:
 RESPONDA SOMENTE EM JSON:
 
 {
-  "sugestoes": ["Prato 1", "Prato 2", "Prato 3"],
+  "sugestoes": [
+    {
+      "nome": "Prato 1",
+      "categoria": "ALMOCO",
+      "ingredientes": [
+        { "nome": "Ingrediente 1", "quantidade": 100, "unidade": "g", "categoria": "TEMPERO" }
+      ]
+    }
+  ],
   "observacoes": "Motivo das escolhas"
 }
 `
