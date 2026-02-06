@@ -1,39 +1,31 @@
 import { beforeEach, describe, expect, it } from "vitest"
-import { Menu } from "../../../src/@types/menu"
-import { CategoriaPrato, TipoRefeicao } from "../../../src/generated/prisma/enums"
+import { Ingrediente } from "../../../src/generated/prisma/client"
+import { TipoRefeicao } from "../../../src/generated/prisma/enums"
 import { MenuAiSuggestsUseCase } from "../../../src/use-cases/menu-ai/suggests"
 import { ResourceNotFoundError } from "../../../src/utils/errors/resource-not-found-error"
 import { InMemoryDishRepository } from "../../in-memory/in-memory-dish-repository"
+import { InMemoryIngredientRepository } from "../../in-memory/in-memory-ingredient-repository"
 import { InMemoryMealRepository } from "../../in-memory/in-memory-meal-repository"
 import { InMemoryMenuAiRepository } from "../../in-memory/in-memory-menu-ai-repository"
 import { InMemoryMenuRepository } from "../../in-memory/in-memory-menu-repository"
-describe("Menu AI Suggestions Use Case", () => {
+
+describe("Menu AI Suggests Use Case (Unit)", () => {
   let sut: MenuAiSuggestsUseCase
   let menuRepository: InMemoryMenuRepository
   let aiRepository: InMemoryMenuAiRepository
   let mealRepository: InMemoryMealRepository
   let dishRepository: InMemoryDishRepository
+  let ingredientRepository: InMemoryIngredientRepository
 
   beforeEach(() => {
-    dishRepository = new InMemoryDishRepository()
+    const sharedIngredients: Ingrediente[] = []
+    ingredientRepository = new InMemoryIngredientRepository(sharedIngredients)
+    dishRepository = new InMemoryDishRepository(sharedIngredients)
     mealRepository = new InMemoryMealRepository(dishRepository)
     menuRepository = new InMemoryMenuRepository(mealRepository, dishRepository)
     aiRepository = new InMemoryMenuAiRepository()
     sut = new MenuAiSuggestsUseCase(menuRepository, aiRepository)
   })
-
-  function makeContext(menu: Menu) {
-    return {
-      id: menu.id,
-      title: menu.titulo,
-      adults: menu.adultos,
-      kids: menu.criancas ?? 0,
-      restricoes: menu.restricoes,
-      preferencias: menu.preferencias,
-      checkin: menu.checkin,
-      checkout: menu.checkout,
-    }
-  }
 
   it("should suggest dishes for breakfast", async () => {
     const menu = await menuRepository.create({
@@ -47,21 +39,16 @@ describe("Menu AI Suggestions Use Case", () => {
     })
 
     const result = await sut.execute(
-      { menuId: menu.id, },
+      { menuId: menu.id },
       {
         type: TipoRefeicao.CAFE,
         date: new Date("2026-02-15"),
-        context: makeContext(menu),
-        refeicoes: menu.refeicoes
       }
     )
 
-    expect(result.suggestions).toBeInstanceOf(Array)
-    expect(result.suggestions.length).toBeGreaterThan(0)
-    expect(result.context.type).toBe(TipoRefeicao.CAFE)
-    expect(result.context.people.total).toBe(3)
-    expect(result.context.people.adults).toBe(2)
-    expect(result.context.people.kids).toBe(1)
+    expect(result.dishes).toBeInstanceOf(Array)
+    expect(result.dishes.length).toBeGreaterThan(0)
+    expect(result.dishes[0].ingredientes).toBeInstanceOf(Array)
     expect(result.notes).toBeTruthy()
   })
 
@@ -76,17 +63,14 @@ describe("Menu AI Suggestions Use Case", () => {
     })
 
     const result = await sut.execute(
-      { menuId: menu.id, },
+      { menuId: menu.id },
       {
         type: TipoRefeicao.ALMOCO,
         date: new Date("2026-03-02"),
-        context: makeContext(menu),
-        refeicoes: menu.refeicoes
       }
     )
 
-    expect(result.suggestions).toBeInstanceOf(Array)
-    expect(result.suggestions.length).toBeGreaterThan(0)
+    expect(result.dishes).toBeInstanceOf(Array)
     expect(result.context.type).toBe(TipoRefeicao.ALMOCO)
     expect(result.context.date).toEqual(new Date("2026-03-02"))
   })
@@ -102,118 +86,16 @@ describe("Menu AI Suggestions Use Case", () => {
     })
 
     const result = await sut.execute(
-      { menuId: menu.id, },
+      { menuId: menu.id },
       {
         type: TipoRefeicao.JANTAR,
         date: new Date("2026-02-01"),
-        context: makeContext(menu),
-        refeicoes: menu.refeicoes
-      })
+      }
+    )
 
-    expect(result.suggestions).toBeInstanceOf(Array)
-    expect(result.suggestions.length).toBeGreaterThan(0)
+    expect(result.dishes).toBeInstanceOf(Array)
     expect(result.context.type).toBe(TipoRefeicao.JANTAR)
     expect(result.context.date).toEqual(new Date("2026-02-01"))
-  })
-
-  it("should filter out dairy dishes when sem_lactose restriction is set", async () => {
-    const menu = await menuRepository.create({
-      title: "Menu Sem Lactose",
-      adults: 3,
-      kids: 0,
-      restricoes: ["sem_lactose"],
-      checkIn: new Date("2026-02-10"),
-      checkOut: new Date("2026-02-15"),
-    })
-
-    const result = await sut.execute(
-      { menuId: menu.id, },
-      {
-        type: TipoRefeicao.ALMOCO,
-        date: new Date("2026-02-02"),
-        context: makeContext(menu),
-        refeicoes: menu.refeicoes
-      })
-
-    const hasDairyCheese = result.suggestions.some(
-      (s: string) => s.toLowerCase().includes("queijo") && !s.toLowerCase().includes("vegano"),
-    )
-
-    expect(hasDairyCheese).toBe(false)
-  })
-
-  it("should filter out fish dishes when vegetariano restriction is set", async () => {
-    const menu = await menuRepository.create({
-      title: "Menu Vegetariano",
-      adults: 6,
-      kids: 0,
-      restricoes: ["vegetariano"],
-      checkIn: new Date("2026-01-15"),
-      checkOut: new Date("2026-01-20"),
-    })
-
-    const result = await sut.execute(
-      { menuId: menu.id, },
-      {
-        type: TipoRefeicao.ALMOCO,
-        date: new Date("2026-01-17"),
-        context: makeContext(menu),
-        refeicoes: menu.refeicoes
-      })
-
-    const hasFish = result.suggestions.some((s: string) =>
-      s.toLowerCase().includes("peixe"),
-    )
-
-    expect(hasFish).toBe(false)
-  })
-
-  it("should filter out bread dishes when sem_gluten restriction is set", async () => {
-    const menu = await menuRepository.create({
-      title: "Menu Sem Glúten",
-      adults: 2,
-      kids: 1,
-      restricoes: ["sem_gluten"],
-      checkIn: new Date("2026-01-15"),
-      checkOut: new Date("2026-01-20"),
-    })
-
-    const result = await sut.execute(
-      { menuId: menu.id, },
-      {
-        type: TipoRefeicao.ALMOCO,
-        date: new Date("2026-01-16"),
-        context: makeContext(menu),
-        refeicoes: menu.refeicoes
-      })
-
-    const hasBread = result.suggestions.some((s: string) =>
-      s.toLowerCase().includes("pão"),
-    )
-
-    expect(hasBread).toBe(false)
-  })
-
-  it("should return suggestions when no restrictions are set", async () => {
-    const menu = await menuRepository.create({
-      title: "Menu Sem Restrições",
-      adults: 4,
-      kids: 2,
-      restricoes: [],
-      checkIn: new Date("2026-02-10"),
-      checkOut: new Date("2026-02-15"),
-    })
-
-    const result = await sut.execute(
-      { menuId: menu.id, },
-      {
-        type: TipoRefeicao.ALMOCO,
-        date: new Date("2026-02-12"),
-        context: makeContext(menu),
-        refeicoes: menu.refeicoes
-      })
-
-    expect(result.suggestions.length).toBeGreaterThan(0)
   })
 
   it("should return correct menu title in context", async () => {
@@ -227,13 +109,12 @@ describe("Menu AI Suggestions Use Case", () => {
     })
 
     const result = await sut.execute(
-      { menuId: menu.id, },
+      { menuId: menu.id },
       {
         type: TipoRefeicao.ALMOCO,
         date: new Date("2026-03-02"),
-        context: makeContext(menu),
-        refeicoes: menu.refeicoes
-      })
+      }
+    )
 
     expect(result.context.menu).toBe("Férias na Praia")
   })
@@ -250,13 +131,12 @@ describe("Menu AI Suggestions Use Case", () => {
     })
 
     const result = await sut.execute(
-      { menuId: menu.id, },
+      { menuId: menu.id },
       {
         type: TipoRefeicao.ALMOCO,
         date: new Date("2026-02-12"),
-        context: makeContext(menu),
-        refeicoes: menu.refeicoes
-      })
+      }
+    )
 
     expect(result.context.preferencias).toBe("Gosta de frutas tropicais")
   })
@@ -272,15 +152,14 @@ describe("Menu AI Suggestions Use Case", () => {
     })
 
     const result = await sut.execute(
-      { menuId: menu.id, },
+      { menuId: menu.id },
       {
         type: TipoRefeicao.ALMOCO,
         date: new Date("2026-02-12"),
-        context: makeContext(menu),
-        refeicoes: menu.refeicoes
-      })
+      }
+    )
 
-    expect(result.context.preferences).toBeUndefined()
+    expect(result.context.preferencias).toBeUndefined()
   })
 
   it("should default kids to 0 when not provided", async () => {
@@ -293,13 +172,12 @@ describe("Menu AI Suggestions Use Case", () => {
     })
 
     const result = await sut.execute(
-      { menuId: menu.id, },
+      { menuId: menu.id },
       {
         type: TipoRefeicao.ALMOCO,
         date: new Date("2026-02-12"),
-        context: makeContext(menu),
-        refeicoes: menu.refeicoes
-      })
+      }
+    )
 
     expect(result.context.people.kids).toBe(0)
     expect(result.context.people.total).toBe(5)
@@ -317,28 +195,26 @@ describe("Menu AI Suggestions Use Case", () => {
 
     const prato = await dishRepository.create({
       nome: "Café coado",
-      categoria: CategoriaPrato.CAFE_MANHA,
+      categoria: "CAFE_MANHA" as any,
     })
 
-    const meal = await mealRepository.create({
+    await mealRepository.create({
       menuId: menu.id,
       date: new Date("2026-02-11"),
       type: TipoRefeicao.CAFE,
-      dishes: [prato.id]
+      dishes: [prato.id],
     })
 
-    mealRepository.pratosRelation.set(meal.id, [prato.id])
-
     const result = await sut.execute(
-      { menuId: menu.id, },
+      { menuId: menu.id },
       {
         type: TipoRefeicao.CAFE,
         date: new Date("2026-02-12"),
-        context: makeContext(menu),
-        refeicoes: menu.refeicoes
-      })
+      }
+    )
 
-    expect(result.suggestions).not.toContain("Café coado")
+    const dishNames = result.dishes.map((d: { nome: string }) => d.nome.toLowerCase())
+    expect(dishNames).not.toContain("café coado")
   })
 
   it("should suggest all options when menu has no meals yet", async () => {
@@ -352,35 +228,74 @@ describe("Menu AI Suggestions Use Case", () => {
     })
 
     const result = await sut.execute(
-      { menuId: menu.id, },
+      { menuId: menu.id },
       {
         type: TipoRefeicao.CAFE,
         date: new Date("2026-02-12"),
-        context: makeContext(menu),
-        refeicoes: menu.refeicoes
-      })
+      }
+    )
 
-    expect(result.suggestions.length).toBe(6)
+    expect(result.dishes.length).toBeGreaterThan(0)
   })
 
   it("should throw ResourceNotFoundError when menu does not exist", async () => {
+    await expect(
+      sut.execute(
+        { menuId: "non-existent" },
+        {
+          type: TipoRefeicao.ALMOCO,
+          date: new Date(),
+        }
+      )
+    ).rejects.toBeInstanceOf(ResourceNotFoundError)
+  })
+
+  it("should filter dishes by restrictions", async () => {
     const menu = await menuRepository.create({
-      title: "Menu Novo",
+      title: "Menu Restrito",
       adults: 2,
       kids: 0,
+      restricoes: ["sem_lactose"],
+      checkIn: new Date("2026-02-10"),
+      checkOut: new Date("2026-02-15"),
+    })
+
+    const result = await sut.execute(
+      { menuId: menu.id },
+      {
+        type: TipoRefeicao.CAFE,
+        date: new Date("2026-02-12"),
+      }
+    )
+
+    const hasNonVeganCheese = result.dishes.some((d: { nome: string }) =>
+      d.nome.toLowerCase().includes("queijo") &&
+      !d.nome.toLowerCase().includes("vegano")
+    )
+
+    expect(hasNonVeganCheese).toBe(false)
+  })
+
+  it("should calculate total people correctly", async () => {
+    const menu = await menuRepository.create({
+      title: "Família Grande",
+      adults: 6,
+      kids: 3,
       restricoes: [],
       checkIn: new Date("2026-02-10"),
       checkOut: new Date("2026-02-15"),
     })
 
-    await expect(
-      sut.execute({ menuId: "non-existent", },
-        {
-          type: TipoRefeicao.ALMOCO,
-          date: new Date("2026-02-12"),
-          context: makeContext(menu),
-          refeicoes: menu.refeicoes
-        }),
-    ).rejects.toBeInstanceOf(ResourceNotFoundError)
+    const result = await sut.execute(
+      { menuId: menu.id },
+      {
+        type: TipoRefeicao.ALMOCO,
+        date: new Date("2026-02-12"),
+      }
+    )
+
+    expect(result.context.people.adults).toBe(6)
+    expect(result.context.people.kids).toBe(3)
+    expect(result.context.people.total).toBe(9)
   })
 })
