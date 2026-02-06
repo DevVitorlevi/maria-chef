@@ -1,3 +1,4 @@
+import type { Meal } from "@/@types/menu"
 import type {
   DishSuggestions,
   MenuContext,
@@ -6,6 +7,7 @@ import type {
 } from "@/repositories/DTOs/ai.dtos"
 import type { MenuAiRepository } from "@/repositories/menu-ai-repository"
 import type { MenuRepository } from "@/repositories/menu-repository"
+import { InvalidDateError } from "@/utils/errors/invalid-date-error"
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 
 export class MenuAiSuggestsUseCase {
@@ -24,18 +26,24 @@ export class MenuAiSuggestsUseCase {
       throw new ResourceNotFoundError()
     }
 
+    const suggestionDate = new Date(input.date)
+    if (suggestionDate < menu.checkin || suggestionDate > menu.checkout) {
+      throw new InvalidDateError
+    }
+
     const context: MenuContext = {
       id: menu.id,
       title: menu.titulo,
       adults: menu.adultos,
-      kids: menu.criancas,
-      restricoes: menu.restricoes,
-      preferencias: menu.preferencias ?? undefined,
+      kids: menu.criancas ?? 0,
+      restricoes: menu.restricoes ?? [],
+      preferencias: menu.preferencias ?? "",
       checkin: menu.checkin,
       checkout: menu.checkout,
     }
 
-    const suggestions = await this.menuAIRepository.suggests(input, context, menu.refeicoes)
+    const meals: Meal[] = menu.refeicoes ?? []
+    const suggestions = await this.menuAIRepository.suggests(input, context, meals)
 
     return suggestions
   }
