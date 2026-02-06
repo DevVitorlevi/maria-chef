@@ -1,0 +1,155 @@
+import { beforeEach, describe, expect, it } from "vitest"
+import { Ingrediente } from "../../../src/generated/prisma/client"
+import { CategoriaIngrediente, CategoriaPrato, TipoRefeicao } from "../../../src/generated/prisma/enums"
+import { AcceptMenuAISuggestionsUseCase } from "../../../src/use-cases/menu-ai/accept-suggestions"
+import { InvalidDateError } from "../../../src/utils/errors/invalid-date-error"
+import { ResourceNotFoundError } from "../../../src/utils/errors/resource-not-found-error"
+import { InMemoryDishRepository } from "../../in-memory/in-memory-dish-repository"
+import { InMemoryIngredientRepository } from "../../in-memory/in-memory-ingredient-repository"
+import { InMemoryMealRepository } from "../../in-memory/in-memory-meal-repository"
+import { InMemoryMenuRepository } from "../../in-memory/in-memory-menu-repository"
+
+describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
+  let sut: AcceptMenuAISuggestionsUseCase
+  let menuRepository: InMemoryMenuRepository
+  let mealRepository: InMemoryMealRepository
+  let dishRepository: InMemoryDishRepository
+  let ingredientRepository: InMemoryIngredientRepository
+
+  beforeEach(() => {
+    const sharedIngredients: Ingrediente[] = []
+    ingredientRepository = new InMemoryIngredientRepository(sharedIngredients)
+    dishRepository = new InMemoryDishRepository(sharedIngredients)
+    mealRepository = new InMemoryMealRepository(dishRepository)
+    menuRepository = new InMemoryMenuRepository(mealRepository, dishRepository)
+
+    sut = new AcceptMenuAISuggestionsUseCase(
+      menuRepository,
+      mealRepository,
+      dishRepository,
+      ingredientRepository
+    )
+  })
+
+  it("should accept suggestions and create dishes with ingredients", async () => {
+    const menu = await menuRepository.create({
+      title: "Viagem Família",
+      adults: 2,
+      checkIn: new Date("2026-02-01"),
+      checkOut: new Date("2026-02-05"),
+      restricoes: [],
+    })
+
+    const suggestionData = {
+      menuId: menu.id,
+      type: TipoRefeicao.ALMOCO,
+      date: new Date("2026-02-02"),
+      dishes: [
+        {
+          nome: "Frango Grelhado",
+          categoria: CategoriaPrato.ALMOCO,
+          ingredientes: [
+            {
+              nome: "Peito de Frango",
+              quantidade: 500,
+              unidade: "g",
+              categoria: CategoriaIngrediente.PROTEINA
+            }
+          ]
+        }
+      ]
+    }
+
+    const result = await sut.execute(suggestionData)
+
+    expect(result.meal.id).toBeTruthy()
+    expect(result.createdDishesCount).toBe(1)
+
+    const dish = await dishRepository.findById(result.meal.pratos[0].id)
+    expect(dish?.nome).toBe("Frango Grelhado")
+    expect(dish.ingredientes).toHaveLength(1)
+    expect(dish.ingredientes[0].nome).toBe("Peito de Frango")
+  })
+
+  it("should throw InvalidDateRangeError when date is before check-in", async () => {
+    const menu = await menuRepository.create({
+      title: "Menu Curto",
+      adults: 1,
+      checkIn: new Date("2026-05-10"),
+      checkOut: new Date("2026-05-15"),
+    })
+
+    await expect(
+      sut.execute({
+        menuId: menu.id,
+        date: new Date("2026-05-09"),
+        type: TipoRefeicao.JANTAR,
+        dishes: []
+      })
+    ).rejects.toBeInstanceOf(InvalidDateError)
+  })
+
+  it("should throw InvalidDateRangeError when date is after check-out", async () => {
+    const menu = await menuRepository.create({
+      title: "Menu Curto",
+      adults: 1,
+      checkIn: new Date("2026-05-10"),
+      checkOut: new Date("2026-05-15"),
+    })
+
+    await expect(
+      sut.execute({
+        menuId: menu.id,
+        date: new Date("2026-05-16"),
+        type: TipoRefeicao.JANTAR,
+        dishes: []
+      })
+    ).rejects.toBeInstanceOf(InvalidDateError)
+  })
+
+  it("should throw ResourceNotFoundError when menu does not exist", async () => {
+    await expect(
+      sut.execute({
+        menuId: "id-inexistente",
+        date: new Date(),
+        type: TipoRefeicao.ALMOCO,
+        dishes: []
+      })
+    ).rejects.toBeInstanceOf(ResourceNotFoundError)
+  })
+
+  it("should persist multiple dishes and multiple ingredients correctly", async () => {
+    const menu = await menuRepository.create({
+      title: "Banquete",
+      adults: 10,
+      checkIn: new Date("2026-01-01"),
+      checkOut: new Date("2026-01-01"),
+    })
+
+    const result = await sut.execute({
+      menuId: menu.id,
+      date: new Date("2026-01-01"),
+      type: TipoRefeicao.ALMOCO,
+      dishes: [
+        {
+          nome: "Prato A",
+          categoria: CategoriaPrato.ALMOCO,
+          ingredientes: [
+            { nome: "Ing 1", quantidade: 1, unidade: "un", categoria: CategoriaIngrediente.OUTROS },
+            { nome: "Ing 2", quantidade: 2, unidade: "un", categoria: CategoriaIngrediente.OUTROS }
+          ]
+        },
+        {
+          nome: "Prato B",
+          categoria: CategoriaPrato.ALMOCO,
+          ingredientes: [
+            { nome: "Ing 3", quantidade: 3, unidade: "un", categoria: CategoriaIngrediente.OUTROS }
+          ]
+        }
+      ]
+    })
+
+    expect(result.createdDishesCount).toBe(2)
+    expect(result.meal.pratos).toHaveLength(2)
+  })
+})
