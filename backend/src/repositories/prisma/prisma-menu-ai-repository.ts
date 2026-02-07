@@ -6,7 +6,8 @@ import { z } from "zod"
 import type {
   DishSuggestions,
   MenuContext,
-  SuggestDishesInput
+  SuggestDishesInput,
+  RegenerateSuggestionsInput
 } from "../DTOs/ai.dtos"
 
 import type { MenuAiRepository } from "../menu-ai-repository"
@@ -49,6 +50,25 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
     const prompt = this.buildPrompt(data.type, context, data.date, meals)
     const aiResponse = await this.callGroqWithRetry(prompt)
 
+    return this.mapAiResponseToDishSuggestions(aiResponse, data, context)
+  }
+
+  async regenerate(
+    data: RegenerateSuggestionsInput,
+    context: MenuContext,
+    meals: Meal[]
+  ): Promise<DishSuggestions> {
+    const prompt = this.buildPrompt(data.type, context, data.date, meals, data.previousSuggestions)
+    const aiResponse = await this.callGroqWithRetry(prompt)
+
+    return this.mapAiResponseToDishSuggestions(aiResponse, data, context)
+  }
+
+  private mapAiResponseToDishSuggestions(
+    aiResponse: GroqResponse,
+    data: SuggestDishesInput,
+    context: MenuContext
+  ): DishSuggestions {
     return {
       dishes: aiResponse.sugestoes.map(dish => ({
         nome: dish.nome,
@@ -80,12 +100,10 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
     let lastError: any = null
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`🔄 Tentativa ${attempt}/${maxRetries}...`)
         return await this.callGroq(prompt)
       } catch (error: any) {
         lastError = error
         if (attempt < maxRetries) {
-          console.warn(`⚠️ Falha na tentativa ${attempt}, tentando novamente...`)
           await new Promise(resolve => setTimeout(resolve, 1000))
           continue
         }
@@ -116,7 +134,6 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
 
     const validated = groqResponseSchema.safeParse(sanitizedJson)
     if (!validated.success) {
-      console.error("❌ Erro de Validação:", JSON.stringify(validated.error.format(), null, 2))
       throw new Error("Resposta da IA fora do padrão esperado")
     }
 
@@ -170,8 +187,9 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
     return data;
   }
 
-  private buildPrompt(type: TipoRefeicao, context: MenuContext, date: Date, meals: Meal[]): string {
+  private buildPrompt(type: TipoRefeicao, context: MenuContext, date: Date, meals: Meal[], previousSuggestions: string[] = []): string {
     const nomesJaUsados = meals.flatMap(m => m.pratos?.map(p => p.nome) || []).filter(Boolean);
+    const listaNegra = [...new Set([...nomesJaUsados, ...previousSuggestions])];
 
     return `
 Você é uma Chef de Cozinha em Icapuí, Ceará.
@@ -182,8 +200,8 @@ REGRAS CRÍTICAS:
 2. CATEGORIA DO PRATO: [CAFE_MANHA, ALMOCO, JANTAR, SOBREMESA, LANCHE].
 3. CATEGORIA DO INGREDIENTE: [HORTIFRUTI, PROTEINA, LATICINIO, GRAOS, TEMPERO, BEBIDA, CONGELADO, PADARIA, HIGIENE, OUTROS].
 4. UNIDADE E NOME NÃO PODEM SER VAZIOS.
-5. INGREDIENTES: Liste TODOS os ingredientes necessários para a receita, sem limite de quantidade de itens. Seja detalhista.
-6. PROIBIDO REPETIR: [${nomesJaUsados.join(", ")}].
+5. INGREDIENTES: Liste TODOS os ingredientes necessários para a receita. Seja detalhista.
+6. PROIBIDO REPETIR: [${listaNegra.join(", ")}]. Se a lista anterior contiver itens, você deve sugerir pratos COMPLETAMENTE diferentes.
 
 PÚBLICO: ${context.adults} adultos e ${context.kids} crianças.
 RESTRIÇÕES: ${context.restricoes.join(", ")}.
@@ -197,8 +215,7 @@ FORMATO:
       "categoria": "ALMOCO",
       "ingredientes": [
         {"nome": "Item 1", "quantidade": 500, "unidade": "g", "categoria": "PROTEINA"},
-        {"nome": "Item 2", "quantidade": 2, "unidade": "un", "categoria": "HORTIFRUTI"},
-        ... (liste quantos forem necessários)
+        {"nome": "Item 2", "quantidade": 2, "unidade": "un", "categoria": "HORTIFRUTI"}
       ]
     }
   ],

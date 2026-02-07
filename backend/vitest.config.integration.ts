@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     name: "integration",
-    include: ['test/integration/*.spec.ts']
+    include: ['test/integration/*.it.ts']
   },
   resolve: {
     alias: {

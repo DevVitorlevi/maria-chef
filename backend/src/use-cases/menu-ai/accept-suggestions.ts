@@ -1,5 +1,6 @@
-import type { CreateMealFromSuggestionInput } from "@/repositories/DTOs/ai.dtos"
+import type { CategoriaPrato } from "@/generated/prisma/enums"
 import type { DishRepository } from "@/repositories/dish-repository"
+import type { CreateMealFromSuggestionInput } from "@/repositories/DTOs/ai.dtos"
 import type { IngredientRepository } from "@/repositories/ingredient-repository"
 import type { MealRepository } from "@/repositories/meal-repository"
 import type { MenuRepository } from "@/repositories/menu-repository"
@@ -21,12 +22,12 @@ export class AcceptMenuAISuggestionsUseCase {
     }
 
     const mealDate = new Date(input.date)
-    if (mealDate < menu.checkin || mealDate > menu.checkout) {
+    if (mealDate < new Date(menu.checkin) || mealDate > new Date(menu.checkout)) {
       throw new InvalidDateError()
     }
 
     const mealExists = menu.refeicoes?.find(
-      r => new Date(r.data).getTime() === mealDate.getTime() && r.tipo === input.type
+      (r: { data: string | number | Date; tipo: any }) => new Date(r.data).getTime() === mealDate.getTime() && r.tipo === input.type
     )
     if (mealExists) {
       throw new Error("Já existe uma refeição deste tipo nesta data.")
@@ -34,10 +35,12 @@ export class AcceptMenuAISuggestionsUseCase {
 
     const createdDishIds: string[] = []
 
-    for (const suggestion of input.dishes) {
+    const dishesToProcess = input.dishes ?? []
+
+    for (const suggestion of dishesToProcess) {
       const dish = await this.dishRepository.create({
         nome: suggestion.nome,
-        categoria: suggestion.categoria,
+        categoria: suggestion.categoria as CategoriaPrato,
       })
 
       createdDishIds.push(dish.id)
@@ -47,7 +50,7 @@ export class AcceptMenuAISuggestionsUseCase {
           nome: ingrediente.nome,
           quantidade: ingrediente.quantidade,
           unidade: ingrediente.unidade,
-          categoria: ingrediente.categoria,
+          categoria: ingrediente.categoria as any,
         })
       }
     }

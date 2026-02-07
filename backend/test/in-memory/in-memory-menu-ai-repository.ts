@@ -8,6 +8,7 @@ import type {
   DishSuggestions,
   MenuContext,
   SuggestDishesInput,
+  RegenerateSuggestionsInput,
 } from "@/repositories/DTOs/ai.dtos"
 
 import type { MenuAiRepository } from "@/repositories/menu-ai-repository"
@@ -18,7 +19,6 @@ export class InMemoryMenuAiRepository implements MenuAiRepository {
     context: MenuContext,
     meals: Meal[],
   ): Promise<DishSuggestions> {
-
     const kids = context.kids ?? 0
     const totalPeople = context.adults + kids
 
@@ -46,7 +46,21 @@ export class InMemoryMenuAiRepository implements MenuAiRepository {
           ingredientes: [
             { nome: "Café", quantidade: 20, unidade: "g", categoria: "OUTROS" },
             { nome: "Água", quantidade: 300, unidade: "ml", categoria: "OUTROS" },
-
+          ],
+        },
+        {
+          nome: "Ovo mexido",
+          categoria: "CAFE_MANHA",
+          ingredientes: [
+            { nome: "Ovo", quantidade: 2, unidade: "un", categoria: "PROTEINA" },
+          ],
+        },
+        {
+          nome: "Smoothie de frutas",
+          categoria: "LANCHE",
+          ingredientes: [
+            { nome: "Banana", quantidade: 1, unidade: "un", categoria: "HORTIFRUTI" },
+            { nome: "Leite de coco", quantidade: 200, unidade: "ml", categoria: "OUTROS" },
           ],
         },
       ],
@@ -69,6 +83,14 @@ export class InMemoryMenuAiRepository implements MenuAiRepository {
             { nome: "Filé de peixe", quantidade: 180, unidade: "g", categoria: "PROTEINA" },
             { nome: "Sal", quantidade: 2, unidade: "g", categoria: "TEMPERO" },
           ],
+        },
+        {
+          nome: "Feijoada Vegana",
+          categoria: "ALMOCO",
+          ingredientes: [
+            { nome: "Feijão preto", quantidade: 300, unidade: "g", categoria: "GRAOS" },
+            { nome: "Cogumelos", quantidade: 200, unidade: "g", categoria: "HORTIFRUTI" },
+          ],
         }
       ],
 
@@ -88,11 +110,17 @@ export class InMemoryMenuAiRepository implements MenuAiRepository {
             { nome: "Farinha integral", quantidade: 120, unidade: "g", categoria: "OUTROS" },
           ],
         },
+        {
+          nome: "Omelete de ervas",
+          categoria: "JANTAR",
+          ingredientes: [
+            { nome: "Ovo", quantidade: 3, unidade: "un", categoria: "PROTEINA" },
+          ],
+        }
       ],
     }
 
     let dishes = [...baseDishes[data.type]]
-
 
     if (context.restricoes.includes("sem_lactose")) {
       dishes = dishes.filter(d =>
@@ -103,7 +131,7 @@ export class InMemoryMenuAiRepository implements MenuAiRepository {
 
     if (context.restricoes.includes("vegetariano")) {
       dishes = dishes.filter(d =>
-        !d.nome.toLowerCase().includes("peixe"),
+        !d.nome.toLowerCase().includes("peixe") && !d.nome.toLowerCase().includes("polvo"),
       )
     }
 
@@ -122,27 +150,42 @@ export class InMemoryMenuAiRepository implements MenuAiRepository {
     )
 
     return {
-
       dishes,
-
       context: {
         menu: context.title,
         type: data.type,
         date: data.date,
-
         people: {
           adults: context.adults,
           kids,
           total: totalPeople,
         },
-
         restricoes: context.restricoes,
         ...(context.preferencias && {
           preferencias: context.preferencias,
         }),
       },
-
       notes: `Sugestões mockadas estruturadas para ${data.type}. Pessoas: ${totalPeople}`,
+    }
+  }
+
+  async regenerate(
+    data: RegenerateSuggestionsInput,
+    context: MenuContext,
+    meals: Meal[],
+  ): Promise<DishSuggestions> {
+    const originalSuggestions = await this.suggests(data, context, meals)
+
+    const filteredDishes = originalSuggestions.dishes.filter(
+      dish => !data.previousSuggestions.some(
+        prev => prev.toLowerCase() === dish.nome.toLowerCase()
+      )
+    )
+
+    return {
+      ...originalSuggestions,
+      dishes: filteredDishes,
+      notes: `Novas sugestões evitando: ${data.previousSuggestions.join(", ")}`,
     }
   }
 }
