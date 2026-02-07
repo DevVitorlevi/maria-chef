@@ -25,6 +25,7 @@ describe("Menu AI Suggests (E2E)", () => {
       checkIn: "2026-02-01",
       checkOut: "2026-02-05",
       adults: 2,
+      kids: 0,
     })
 
     const res = await request(app.server)
@@ -35,37 +36,35 @@ describe("Menu AI Suggests (E2E)", () => {
   })
 
   it("should send correct context to IA", async () => {
-    vi.mocked(groq.chat.completions.create).mockResolvedValue({
-      choices: [{
-        message: {
-          content: JSON.stringify({
-            sugestoes: [
-              {
-                nome: "Prato 1",
-                categoria: "ALMOCO",
-                ingredientes: [{ nome: "Ing 1", quantidade: 1, unidade: "un", categoria: "PROTEINA" }]
-              },
-              {
-                nome: "Prato 2",
-                categoria: "ALMOCO",
-                ingredientes: [{ nome: "Ing 2", quantidade: 1, unidade: "un", categoria: "GRAOS" }]
-              },
-              {
-                nome: "Prato 3",
-                categoria: "ALMOCO",
-                ingredientes: [{ nome: "Ing 3", quantidade: 1, unidade: "un", categoria: "HORTIFRUTI" }]
-              },
-            ],
-            observacoes: "Mock"
-          })
+    const mockResponse = {
+      sugestoes: [
+        {
+          nome: "Prato 1",
+          categoria: "ALMOCO",
+          ingredientes: [{ nome: "Ing 1", quantidade: 1, unidade: "un", categoria: "PROTEINA" }]
+        },
+        {
+          nome: "Prato 2",
+          categoria: "ALMOCO",
+          ingredientes: [{ nome: "Ing 2", quantidade: 1, unidade: "un", categoria: "GRAOS" }]
+        },
+        {
+          nome: "Prato 3",
+          categoria: "ALMOCO",
+          ingredientes: [{ nome: "Ing 3", quantidade: 1, unidade: "un", categoria: "HORTIFRUTI" }]
         }
-      }]
+      ],
+      observacoes: "Mock"
+    }
+
+    vi.mocked(groq.chat.completions.create).mockResolvedValue({
+      choices: [{ message: { content: JSON.stringify(mockResponse) } }]
     } as any)
 
     const menu = await request(app.server).post("/cardapio").send({
       title: "Dieta",
       checkIn: "2026-02-01",
-      checkOut: "2026-02-05",
+      checkOut: "2026-02-10",
       adults: 3,
       kids: 2,
       restricoes: []
@@ -73,7 +72,10 @@ describe("Menu AI Suggests (E2E)", () => {
 
     const res = await request(app.server)
       .post(`/cardapio/${menu.body.menu.id}/suggests`)
-      .send({ type: TipoRefeicao.ALMOCO, date: "2026-02-02" })
+      .send({
+        type: TipoRefeicao.ALMOCO,
+        date: "2026-02-05"
+      })
 
     expect(res.status).toBe(200)
     expect(res.body.context.people.total).toBe(5)
@@ -100,6 +102,7 @@ describe("Menu AI Suggests (E2E)", () => {
       checkIn: "2026-02-01",
       checkOut: "2026-02-05",
       adults: 2,
+      kids: 0,
       restricoes: []
     })
 
