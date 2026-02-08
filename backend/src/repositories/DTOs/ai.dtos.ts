@@ -70,3 +70,17 @@ export interface CreateMealFromSuggestionInput {
   type: TipoRefeicao
   dishes: AISuggestedDish[]
 }
+export interface VariationContext {
+  tipo: TipoRefeicao
+  restricoes: string[]
+  preferencias: string
+}
+export interface SuggestVariationsInput {
+  pratoOriginal: string
+  contexto: VariationContext
+}
+export interface VariationSuggestionsResponse {
+  dishes: AISuggestedDish[]
+  categoria: string
+  notes: string
+}
