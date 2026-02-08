@@ -3,7 +3,9 @@ import type {
   DishSuggestions,
   MenuContext,
   RegenerateSuggestionsInput,
-  SuggestDishesInput
+  SuggestDishesInput,
+  SuggestVariationsInput,
+  VariationSuggestionsResponse
 } from "./DTOs/ai.dtos"
 
 export interface MenuAiRepository {
@@ -18,4 +20,8 @@ export interface MenuAiRepository {
     context: MenuContext,
     meals: Meal[]
   ): Promise<DishSuggestions>
+
+  variations(
+    data: SuggestVariationsInput
+  ): Promise<VariationSuggestionsResponse>
 }

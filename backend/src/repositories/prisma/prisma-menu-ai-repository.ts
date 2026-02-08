@@ -6,8 +6,10 @@ import { z } from "zod"
 import type {
   DishSuggestions,
   MenuContext,
+  RegenerateSuggestionsInput,
   SuggestDishesInput,
-  RegenerateSuggestionsInput
+  SuggestVariationsInput,
+  VariationSuggestionsResponse
 } from "../DTOs/ai.dtos"
 
 import type { MenuAiRepository } from "../menu-ai-repository"
@@ -48,7 +50,7 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
     meals: Meal[]
   ): Promise<DishSuggestions> {
     const prompt = this.buildPrompt(data.type, context, data.date, meals)
-    const aiResponse = await this.callGroqWithRetry(prompt)
+    const aiResponse = await this.callGroqWithRetry(prompt, groqResponseSchema)
 
     return this.mapAiResponseToDishSuggestions(aiResponse, data, context)
   }
@@ -59,9 +61,56 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
     meals: Meal[]
   ): Promise<DishSuggestions> {
     const prompt = this.buildPrompt(data.type, context, data.date, meals, data.previousSuggestions)
-    const aiResponse = await this.callGroqWithRetry(prompt)
+    const aiResponse = await this.callGroqWithRetry(prompt, groqResponseSchema)
 
     return this.mapAiResponseToDishSuggestions(aiResponse, data, context)
+  }
+
+  async variations(data: SuggestVariationsInput): Promise<VariationSuggestionsResponse> {
+    const prompt = `
+      Você é um Chef de Cozinha. O usuário deseja variar o prato "${data.pratoOriginal}".
+      Sugira de 3 a 5 variações ou substituições COMPLETAS (com ingredientes).
+
+      DIRETRIZES TÉCNICAS (OBRIGATÓRIO):
+      1. ESPECIFIQUE OS ITENS: Nunca use apenas "Peixe", "Carne" ou "Acompanhamento".
+      2. CORTE/ESPÉCIE: Nomeie o corte (Ex: Maminha, Filé de Peito, Sobrecoxa) ou a espécie (Ex: Pargo, Sirigado, Camarão Rosa).
+      3. NATURALIDADE: Não fique repetindo nomes de cidades ou estados nos pratos (Ex: use apenas "Castanha de Caju" em vez de "Castanha do Ceará").
+      
+      CONTEXTO:
+      - Tipo: ${TIPO_TEXTO[data.contexto.tipo]}
+      - Restrições: ${data.contexto.restricoes.join(", ")}
+      - Preferências: ${data.contexto.preferencias}
+
+      Responda APENAS com JSON:
+      {
+        "sugestoes": [
+          {
+            "nome": "Nome do Prato",
+            "categoria": "ALMOCO",
+            "ingredientes": [
+              {"nome": "Item Específico", "quantidade": 150, "unidade": "g", "categoria": "PROTEINA"}
+            ]
+          }
+        ],
+        "observacoes": "Por que estas variações são boas substitutas para ${data.pratoOriginal}."
+      }
+    `
+    const aiResponse = await this.callGroqWithRetry(prompt, groqResponseSchema)
+
+    return {
+      dishes: aiResponse.sugestoes.map(dish => ({
+        nome: dish.nome,
+        categoria: dish.categoria as CategoriaPrato,
+        ingredientes: dish.ingredientes.map(ing => ({
+          nome: ing.nome,
+          quantidade: ing.quantidade,
+          unidade: ing.unidade,
+          categoria: ing.categoria as CategoriaIngrediente,
+        }))
+      })),
+      categoria: `Variações para ${data.pratoOriginal}`,
+      notes: aiResponse.observacoes
+    }
   }
 
   private mapAiResponseToDishSuggestions(
@@ -96,11 +145,11 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
     }
   }
 
-  private async callGroqWithRetry(prompt: string, maxRetries = 2): Promise<GroqResponse> {
+  private async callGroqWithRetry<T>(prompt: string, schema: z.Schema<T>, maxRetries = 2): Promise<T> {
     let lastError: any = null
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        return await this.callGroq(prompt)
+        return await this.callGroq(prompt, schema)
       } catch (error: any) {
         lastError = error
         if (attempt < maxRetries) {
@@ -112,7 +161,7 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
     throw lastError
   }
 
-  private async callGroq(prompt: string): Promise<GroqResponse> {
+  private async callGroq<T>(prompt: string, schema: z.Schema<T>): Promise<T> {
     const completion = await groq.chat.completions.create({
       model: GROQ_CONFIG.model,
       temperature: GROQ_CONFIG.temperature,
@@ -120,7 +169,7 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
       messages: [
         {
           role: "system",
-          content: "Você é um chef especialista. Responda APENAS com JSON. Não use Markdown. Mantenha as categorias rigorosamente como solicitado.",
+          content: "Você é um chef especialista. Responda APENAS com JSON. Não use Markdown.",
         },
         { role: "user", content: prompt },
       ],
@@ -132,7 +181,7 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
     const rawJson = JSON.parse(text)
     const sanitizedJson = this.sanitizeAiResponse(rawJson)
 
-    const validated = groqResponseSchema.safeParse(sanitizedJson)
+    const validated = schema.safeParse(sanitizedJson)
     if (!validated.success) {
       throw new Error("Resposta da IA fora do padrão esperado")
     }
@@ -192,34 +241,34 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
     const listaNegra = [...new Set([...nomesJaUsados, ...previousSuggestions])];
 
     return `
-Você é uma Chef de Cozinha em Icapuí, Ceará.
-Crie sugestões de pratos para ${TIPO_TEXTO[type]} no dia ${date.toLocaleDateString("pt-BR")}.
+      Você é um Chef de Cozinha. Crie sugestões de pratos para ${TIPO_TEXTO[type]} no dia ${date.toLocaleDateString("pt-BR")}.
 
-REGRAS CRÍTICAS:
-1. JSON APENAS.
-2. CATEGORIA DO PRATO: [CAFE_MANHA, ALMOCO, JANTAR, SOBREMESA, LANCHE].
-3. CATEGORIA DO INGREDIENTE: [HORTIFRUTI, PROTEINA, LATICINIO, GRAOS, TEMPERO, BEBIDA, CONGELADO, PADARIA, HIGIENE, OUTROS].
-4. UNIDADE E NOME NÃO PODEM SER VAZIOS.
-5. INGREDIENTES: Liste TODOS os ingredientes necessários para a receita. Seja detalhista.
-6. PROIBIDO REPETIR: [${listaNegra.join(", ")}]. Se a lista anterior contiver itens, você deve sugerir pratos COMPLETAMENTE diferentes.
+      REGRAS DE NOMENCLATURA:
+      1. ESPECIFIQUE O CORTE/ESPÉCIE: Nomeie exatamente o que será usado (Ex: Maminha, Lombo Suíno, Tilápia, Pargo, Polvo).
+      2. EVITE REPETIÇÕES GEOGRÁFICAS: Não adicione "de Icapuí" ou "do Ceará" aos nomes dos pratos ou ingredientes. Seja direto e elegante.
+      3. INGREDIENTES LOCAIS: Use ingredientes como coco, castanha, macaxeira e frutos do mar de forma natural na composição.
 
-PÚBLICO: ${context.adults} adultos e ${context.kids} crianças.
-RESTRIÇÕES: ${context.restricoes.join(", ")}.
-ESTILO: Comida de praia, leve e tropical, valorizando ingredientes locais.
+      REGRAS TÉCNICAS:
+      - JSON APENAS.
+      - CATEGORIA DO PRATO: [CAFE_MANHA, ALMOCO, JANTAR, SOBREMESA, LANCHE].
+      - CATEGORIA DO INGREDIENTE: [HORTIFRUTI, PROTEINA, LATICINIO, GRAOS, TEMPERO, BEBIDA, CONGELADO, PADARIA, HIGIENE, OUTROS].
+      - PROIBIDO REPETIR: [${listaNegra.join(", ")}].
 
-FORMATO:
-{
-  "sugestoes": [
-    {
-      "nome": "Nome do Prato",
-      "categoria": "ALMOCO",
-      "ingredientes": [
-        {"nome": "Item 1", "quantidade": 500, "unidade": "g", "categoria": "PROTEINA"},
-        {"nome": "Item 2", "quantidade": 2, "unidade": "un", "categoria": "HORTIFRUTI"}
-      ]
-    }
-  ],
-  "observacoes": "Dica do chef sobre o preparo ou harmonização"
-}`;
+      PÚBLICO: ${context.adults} adultos e ${context.kids ?? 0} crianças.
+      RESTRIÇÕES: ${context.restricoes.join(", ")}.
+
+      FORMATO:
+      {
+        "sugestoes": [
+          {
+            "nome": "Ex: Maminha Grelhada com Risoto de Cogumelos",
+            "categoria": "ALMOCO",
+            "ingredientes": [
+              {"nome": "Maminha", "quantidade": 500, "unidade": "g", "categoria": "PROTEINA"}
+            ]
+          }
+        ],
+        "observacoes": "Dica técnica do chef sobre o preparo."
+      }`;
   }
 }

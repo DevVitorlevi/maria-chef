@@ -8,7 +8,7 @@ import { RegenarateSuggestionsUseCase } from "../../src/use-cases/menu-ai/regene
 
 config()
 
-describe("Menu AI Regenerate Integration — Prisma + Real Groq", () => {
+describe("Menu AI Regenerate Integration", () => {
   let regenerateUseCase: RegenarateSuggestionsUseCase
   let menuRepository: PrismaMenuRepository
   let aiRepository: PrismaMenuAIRepository

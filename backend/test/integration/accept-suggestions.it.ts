@@ -11,7 +11,7 @@ import { AcceptMenuAISuggestionsUseCase } from "../../src/use-cases/menu-ai/acce
 
 config()
 
-describe("Menu AI Accept Integration — Full Prisma Persistence", () => {
+describe("Menu AI Accept Integration", () => {
   let acceptUseCase: AcceptMenuAISuggestionsUseCase
   let menuRepository: PrismaMenuRepository
   let dishRepository: PrismaDishRepository
@@ -87,12 +87,15 @@ describe("Menu AI Accept Integration — Full Prisma Persistence", () => {
       []
     )
 
+    console.log("Sugestoes:", aiSuggestions)
+
     expect(aiSuggestions.dishes.length).toBeGreaterThan(0)
 
     const suggestedNames = aiSuggestions.dishes.map(d => d.nome.toLowerCase())
     expect(suggestedNames).not.toContain("macarrão à bolonhesa")
 
     const chosenDish = aiSuggestions.dishes[0]
+    console.log("Prato Selecionado", chosenDish)
     if (!chosenDish) {
       throw new Error("AI did not return any dishes")
     }
@@ -105,6 +108,7 @@ describe("Menu AI Accept Integration — Full Prisma Persistence", () => {
     })
 
     const updatedMenu = await menuRepository.findById(menu.id)
+    console.log("Refeicoes Atualizadas:", updatedMenu?.refeicoes[0]?.pratos)
     const meal = updatedMenu?.refeicoes[0]
 
     expect(meal?.pratos[0]?.nome).toBe(chosenDish.nome)

@@ -7,8 +7,10 @@ import type {
   AISuggestedDish,
   DishSuggestions,
   MenuContext,
-  SuggestDishesInput,
   RegenerateSuggestionsInput,
+  SuggestDishesInput,
+  SuggestVariationsInput,
+  VariationSuggestionsResponse,
 } from "@/repositories/DTOs/ai.dtos"
 
 import type { MenuAiRepository } from "@/repositories/menu-ai-repository"
@@ -186,6 +188,52 @@ export class InMemoryMenuAiRepository implements MenuAiRepository {
       ...originalSuggestions,
       dishes: filteredDishes,
       notes: `Novas sugestões evitando: ${data.previousSuggestions.join(", ")}`,
+    }
+  }
+
+  async variations(
+    data: SuggestVariationsInput
+  ): Promise<VariationSuggestionsResponse> {
+    const variationMocks: AISuggestedDish[] = [
+      {
+        nome: "Moqueca de Banana da Terra",
+        categoria: "ALMOCO",
+        ingredientes: [
+          { nome: "Banana da terra", quantidade: 2, unidade: "un", categoria: "HORTIFRUTI" },
+          { nome: "Leite de coco", quantidade: 200, unidade: "ml", categoria: "OUTROS" },
+        ],
+      },
+      {
+        nome: "Peixe na Brasa com Ervas",
+        categoria: "ALMOCO",
+        ingredientes: [
+          { nome: "Peixe inteiro", quantidade: 1, unidade: "kg", categoria: "PROTEINA" },
+          { nome: "Alecrim", quantidade: 5, unidade: "g", categoria: "TEMPERO" },
+        ],
+      },
+      {
+        nome: "Risoto de Camarão",
+        categoria: "ALMOCO",
+        ingredientes: [
+          { nome: "Arroz arbóreo", quantidade: 200, unidade: "g", categoria: "GRAOS" },
+          { nome: "Camarão", quantidade: 300, unidade: "g", categoria: "PROTEINA" },
+        ],
+      }
+    ]
+
+    let filteredVariations = [...variationMocks]
+
+    if (data.contexto.restricoes.includes("vegetariano")) {
+      filteredVariations = filteredVariations.filter(v =>
+        !v.nome.toLowerCase().includes("peixe") &&
+        !v.nome.toLowerCase().includes("camarão")
+      )
+    }
+
+    return {
+      dishes: filteredVariations,
+      categoria: `Variações para ${data.pratoOriginal}`,
+      notes: "Substituições mockadas mantendo o estilo tropical."
     }
   }
 }
