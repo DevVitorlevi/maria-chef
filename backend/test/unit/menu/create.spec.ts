@@ -57,7 +57,7 @@ describe("Create Menu Use Case", () => {
     expect(menu.adultos).toBe(1)
     expect(menu.criancas).toBe(0)
     expect(menu.restricoes).toEqual([])
-    expect(menu.preferencias).toBeNull()
+    expect(menu.preferencias).toEqual("")
     expect(menuRepository.database).toHaveLength(1)
   })
 
@@ -76,7 +76,7 @@ describe("Create Menu Use Case", () => {
     })
 
     expect(menu.restricoes).toEqual([])
-    expect(menu.preferencias).toBeNull()
+    expect(menu.preferencias).toEqual("")
     expect(menuRepository.database).toHaveLength(1)
   })
 

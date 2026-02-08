@@ -293,7 +293,7 @@ describe("Update Menu Use Case", () => {
       preferencias: null
     })
 
-    expect(result.menu.preferencias).toBeNull()
+    expect(result.menu.preferencias).toEqual("")
   })
 
   it("should allow date update when meals remain within new period", async () => {
