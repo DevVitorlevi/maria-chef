@@ -1,4 +1,3 @@
-import type { CategoriaPrato } from "@/generated/prisma/enums"
 import type { DishRepository } from "@/repositories/dish-repository"
 import type { CreateMealFromSuggestionInput } from "@/repositories/DTOs/ai.dtos"
 import type { IngredientRepository } from "@/repositories/ingredient-repository"
@@ -12,47 +11,42 @@ export class AcceptMenuAISuggestionsUseCase {
     private menuRepository: MenuRepository,
     private mealRepository: MealRepository,
     private dishRepository: DishRepository,
-    private ingredientRepository: IngredientRepository,
+    private ingredientRepository: IngredientRepository
   ) { }
 
   async execute(input: CreateMealFromSuggestionInput) {
     const menu = await this.menuRepository.findById(input.menuId)
+
     if (!menu) {
       throw new ResourceNotFoundError()
     }
 
     const mealDate = new Date(input.date)
-    if (mealDate < new Date(menu.checkin) || mealDate > new Date(menu.checkout)) {
-      throw new InvalidDateError()
-    }
+    const checkin = new Date(menu.checkin)
+    const checkout = new Date(menu.checkout)
 
-    const mealExists = menu.refeicoes?.find(
-      (r: { data: string | number | Date; tipo: any }) => new Date(r.data).getTime() === mealDate.getTime() && r.tipo === input.type
-    )
-    if (mealExists) {
-      throw new Error("Já existe uma refeição deste tipo nesta data.")
+    mealDate.setHours(0, 0, 0, 0)
+    checkin.setHours(0, 0, 0, 0)
+    checkout.setHours(0, 0, 0, 0)
+
+    if (mealDate < checkin || mealDate > checkout) {
+      throw new InvalidDateError()
     }
 
     const createdDishIds: string[] = []
 
-    const dishesToProcess = input.dishes ?? []
-
-    for (const suggestion of dishesToProcess) {
+    for (const dishAI of input.dishes) {
       const dish = await this.dishRepository.create({
-        nome: suggestion.nome,
-        categoria: suggestion.categoria as CategoriaPrato,
+        nome: dishAI.nome,
+        categoria: dishAI.categoria,
       })
 
-      createdDishIds.push(dish.id)
+      const ingredientPromises = dishAI.ingredientes.map(ing =>
+        this.ingredientRepository.create(dish.id, ing)
+      )
+      await Promise.all(ingredientPromises)
 
-      for (const ingrediente of suggestion.ingredientes) {
-        await this.ingredientRepository.create(dish.id, {
-          nome: ingrediente.nome,
-          quantidade: ingrediente.quantidade,
-          unidade: ingrediente.unidade,
-          categoria: ingrediente.categoria as any,
-        })
-      }
+      createdDishIds.push(dish.id)
     }
 
     const meal = await this.mealRepository.create({
@@ -62,12 +56,6 @@ export class AcceptMenuAISuggestionsUseCase {
       dishes: createdDishIds,
     })
 
-    const updatedMenu = await this.menuRepository.findById(input.menuId)
-
-    return {
-      menu: updatedMenu,
-      meal,
-      createdDishesCount: createdDishIds.length,
-    }
+    return { meal }
   }
 }

@@ -1,10 +1,10 @@
 import { config } from "dotenv"
 import { beforeEach, describe, expect, it } from "vitest"
-import { TipoRefeicao } from "../../src/generated/prisma/enums"
-import { prisma } from "../../src/lib/prisma"
-import { PrismaMenuAIRepository } from "../../src/repositories/prisma/prisma-menu-ai-repository"
-import { PrismaMenuRepository } from "../../src/repositories/prisma/prisma-menu-repository"
-import { RegenarateSuggestionsUseCase } from "../../src/use-cases/menu-ai/regenerate-suggestions"
+import { TipoRefeicao } from "@/generated/prisma/enums"
+import { PrismaMenuAIRepository } from "@repositories/prisma/prisma-menu-ai-repository"
+import { PrismaMenuRepository } from "@repositories/prisma/prisma-menu-repository"
+import { RegenarateSuggestionsUseCase } from "@/use-cases/menu-ai/regenerate-suggestions"
+import { setupE2E } from "test/utils/setup-e2e"
 
 config()
 
@@ -14,8 +14,7 @@ describe("Menu AI Regenerate Integration", () => {
   let aiRepository: PrismaMenuAIRepository
 
   beforeEach(async () => {
-    await prisma.refeicao.deleteMany()
-    await prisma.cardapio.deleteMany()
+    await setupE2E()
 
     menuRepository = new PrismaMenuRepository()
     aiRepository = new PrismaMenuAIRepository()

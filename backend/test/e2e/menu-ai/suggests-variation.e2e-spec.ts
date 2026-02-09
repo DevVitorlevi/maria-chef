@@ -19,7 +19,7 @@ describe("Menu AI Suggest Variations (E2E)", () => {
 
   it("should be able to get dish variations", async () => {
     const menuRes = await request(app.server).post("/cardapio").send({
-      title: "Menu de Variações",
+      title: "Menu Maria",
       checkIn: "2026-03-01",
       checkOut: "2026-03-05",
       adults: 2,

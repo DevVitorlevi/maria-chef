@@ -17,7 +17,7 @@ describe("Menu AI Accept Suggestions (E2E)", () => {
 
   it("should accept AI suggestions and persist everything correctly", async () => {
     const menuRes = await request(app.server).post("/cardapio").send({
-      title: "Menu E2E",
+      title: "Menu Maria",
       checkIn: "2026-02-01",
       checkOut: "2026-02-05",
       adults: 2,
@@ -31,19 +31,19 @@ describe("Menu AI Accept Suggestions (E2E)", () => {
         date: "2026-02-02",
         suggestions: [
           {
-            nome: "Prato 1",
+            nome: "Pargo Assado",
             categoria: "ALMOCO",
-            ingredientes: [{ nome: "Ing 1", quantidade: 1, unidade: "g", categoria: "PROTEINA" }],
+            ingredientes: [{ nome: "Pargo", quantidade: 1, unidade: "kg", categoria: "PROTEINA" }],
           },
           {
-            nome: "Prato 2",
+            nome: "Tilapia Grelhada",
             categoria: "ALMOCO",
-            ingredientes: [{ nome: "Ing 2", quantidade: 1, unidade: "g", categoria: "GRAOS" }],
+            ingredientes: [{ nome: "File de Tilapia", quantidade: 1, unidade: "kg", categoria: "PROTEINA" }],
           },
           {
-            nome: "Prato 3",
+            nome: "Lagosta Frita",
             categoria: "ALMOCO",
-            ingredientes: [{ nome: "Ing 3", quantidade: 1, unidade: "g", categoria: "HORTIFRUTI" }],
+            ingredientes: [{ nome: "Lagosta", quantidade: 1, unidade: "kg", categoria: "PROTEINA" }],
           }
         ],
       })

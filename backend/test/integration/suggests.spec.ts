@@ -1,10 +1,10 @@
 import { config } from "dotenv"
 import { beforeEach, describe, expect, it } from "vitest"
-import { TipoRefeicao } from "../../src/generated/prisma/enums"
-import { prisma } from "../../src/lib/prisma"
-import { PrismaMenuAIRepository } from "../../src/repositories/prisma/prisma-menu-ai-repository"
-import { PrismaMenuRepository } from "../../src/repositories/prisma/prisma-menu-repository"
-import { MenuAiSuggestsUseCase } from "../../src/use-cases/menu-ai/suggests"
+import { TipoRefeicao } from "@/generated/prisma/enums"
+import { PrismaMenuAIRepository } from "@repositories/prisma/prisma-menu-ai-repository"
+import { PrismaMenuRepository } from "@repositories/prisma/prisma-menu-repository"
+import { MenuAiSuggestsUseCase } from "@/use-cases/menu-ai/suggests"
+import { setupE2E } from "test/utils/setup-e2e"
 
 config()
 
@@ -14,8 +14,7 @@ describe("Menu AI Suggests Integration", () => {
   let aiRepository: PrismaMenuAIRepository
 
   beforeEach(async () => {
-    await prisma.refeicao.deleteMany()
-    await prisma.cardapio.deleteMany()
+    await setupE2E()
 
     menuRepository = new PrismaMenuRepository()
     aiRepository = new PrismaMenuAIRepository()
@@ -37,7 +36,6 @@ describe("Menu AI Suggests Integration", () => {
       { menuId: menu.id },
       { type: TipoRefeicao.ALMOCO, date: new Date("2026-02-11") }
     )
-
 
     expect(result.dishes).toBeTruthy()
     expect(result.dishes[0]?.ingredientes).toBeTruthy()

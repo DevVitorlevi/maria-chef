@@ -1,13 +1,13 @@
+import { CategoriaIngrediente, CategoriaPrato, TipoRefeicao } from "@/generated/prisma/enums"
 import { PrismaMenuAIRepository } from "@/repositories/prisma/prisma-menu-ai-repository"
+import { AcceptMenuAISuggestionsUseCase } from "@/use-cases/menu-ai/accept-suggestions"
+import { PrismaDishRepository } from "@repositories/prisma/prisma-dish-repository"
+import { PrismaIngredientRepository } from "@repositories/prisma/prisma-ingredient-repository"
+import { PrismaMealRepository } from "@repositories/prisma/prisma-meal-repository"
+import { PrismaMenuRepository } from "@repositories/prisma/prisma-menu-repository"
 import { config } from "dotenv"
+import { setupE2E } from "test/utils/setup-e2e"
 import { beforeEach, describe, expect, it } from "vitest"
-import { CategoriaIngrediente, CategoriaPrato, TipoRefeicao } from "../../src/generated/prisma/enums"
-import { prisma } from "../../src/lib/prisma"
-import { PrismaDishRepository } from "../../src/repositories/prisma/prisma-dish-repository"
-import { PrismaIngredientRepository } from "../../src/repositories/prisma/prisma-ingredient-repository"
-import { PrismaMealRepository } from "../../src/repositories/prisma/prisma-meal-repository"
-import { PrismaMenuRepository } from "../../src/repositories/prisma/prisma-menu-repository"
-import { AcceptMenuAISuggestionsUseCase } from "../../src/use-cases/menu-ai/accept-suggestions"
 
 config()
 
@@ -20,11 +20,7 @@ describe("Menu AI Accept Integration", () => {
   let menuAiRespository: PrismaMenuAIRepository
 
   beforeEach(async () => {
-    await prisma.ingrediente.deleteMany()
-    await prisma.prato.deleteMany()
-    await prisma.refeicao.deleteMany()
-    await prisma.cardapio.deleteMany()
-
+    await setupE2E()
     menuRepository = new PrismaMenuRepository()
     mealRepository = new PrismaMealRepository()
     dishRepository = new PrismaDishRepository()
@@ -41,7 +37,7 @@ describe("Menu AI Accept Integration", () => {
 
   it("should persist AI suggestions in the real database and fetch ingredients through the dish", async () => {
     const menu = await menuRepository.create({
-      title: "Jantar Real Integration",
+      title: "Menu Maria",
       adults: 2,
       restricoes: ["sem_lactose"],
       preferencias: "Frutos do mar",
@@ -96,12 +92,14 @@ describe("Menu AI Accept Integration", () => {
 
     const chosenDish = aiSuggestions.dishes[0]
     console.log("Prato Selecionado", chosenDish)
+
     if (!chosenDish) {
       throw new Error("AI did not return any dishes")
     }
 
+    const menuId = menu.id
     await acceptUseCase.execute({
-      menuId: menu.id,
+      menuId,
       date: new Date("2026-03-02"),
       type: TipoRefeicao.ALMOCO,
       dishes: [chosenDish],

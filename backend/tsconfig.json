@@ -80,17 +80,13 @@
   },
   "include": [
     "src/**/*",
-    "test/**/*"
+    "test/**/*",
+    "./vitest.config.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "build",
-    "coverage",
-    "**/*.spec.ts",
-    "**/*.test.ts",
-    "vitest.config.ts",
-    "tsup.config.ts"
   ],
   "ts-node": {
     "esm": true,

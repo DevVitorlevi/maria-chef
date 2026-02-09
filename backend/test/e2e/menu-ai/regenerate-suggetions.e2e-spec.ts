@@ -19,7 +19,7 @@ describe("Menu AI Regenerate Suggestions (E2E)", () => {
 
   it("should be able to regenerate dish suggestions avoiding previous ones", async () => {
     const menuRes = await request(app.server).post("/cardapio").send({
-      title: "Menu Regenerate",
+      title: "Menu Maria",
       checkIn: "2026-02-01",
       checkOut: "2026-02-05",
       adults: 2,
@@ -33,7 +33,7 @@ describe("Menu AI Regenerate Suggestions (E2E)", () => {
             content: JSON.stringify({
               sugestoes: [
                 {
-                  nome: "Omelete de Ervas",
+                  nome: "Omelete",
                   categoria: "CAFE_MANHA",
                   ingredientes: [{ nome: "Ovo", quantidade: 2, unidade: "un", categoria: "PROTEINA" }],
                 }
@@ -52,7 +52,7 @@ describe("Menu AI Regenerate Suggestions (E2E)", () => {
       .send({
         type: TipoRefeicao.CAFE,
         date: "2026-02-02",
-        previousSuggestions: ["Tapioca de queijo", "Frutas tropicais"]
+        previousSuggestions: ["Omelete"]
       })
 
     expect(response.status).toBe(200)

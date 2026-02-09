@@ -124,7 +124,7 @@ describe("Find All Menus Use Case", () => {
         adults: 4,
         kids: 2,
         restricoes: ["sem lactose"],
-        preferencias: null
+        preferencias: ""
       }),
       menuRepository.create({
         title: "Família Silva - Fevereiro",
@@ -133,7 +133,7 @@ describe("Find All Menus Use Case", () => {
         adults: 4,
         kids: 2,
         restricoes: ["vegetariano"],
-        preferencias: null
+        preferencias: ""
       }),
       menuRepository.create({
         title: "Família Costa - Janeiro",
@@ -142,7 +142,7 @@ describe("Find All Menus Use Case", () => {
         adults: 3,
         kids: 1,
         restricoes: [],
-        preferencias: null
+        preferencias: ""
       })
     ])
 
@@ -161,7 +161,7 @@ describe("Find All Menus Use Case", () => {
         adults: 2,
         kids: 0,
         restricoes: [],
-        preferencias: null
+        preferencias: ""
       }),
       menuRepository.create({
         title: "Cardápio B",
@@ -170,7 +170,7 @@ describe("Find All Menus Use Case", () => {
         adults: 2,
         kids: 0,
         restricoes: [],
-        preferencias: null
+        preferencias: ""
       }),
       menuRepository.create({
         title: "Cardápio C",
@@ -179,7 +179,7 @@ describe("Find All Menus Use Case", () => {
         adults: 2,
         kids: 0,
         restricoes: [],
-        preferencias: null
+        preferencias: ""
       })
     ])
 
@@ -202,7 +202,7 @@ describe("Find All Menus Use Case", () => {
       adults: 2,
       kids: 0,
       restricoes: [],
-      preferencias: null
+      preferencias: ""
     })
 
     const { menus, } = await sut.execute({ data: "2025-03-25" })
@@ -220,7 +220,7 @@ describe("Find All Menus Use Case", () => {
         adults: 4,
         kids: 2,
         restricoes: [],
-        preferencias: null
+        preferencias: ""
       }),
       menuRepository.create({
         title: "Família Silva - Fevereiro",
@@ -229,7 +229,7 @@ describe("Find All Menus Use Case", () => {
         adults: 4,
         kids: 2,
         restricoes: [],
-        preferencias: null
+        preferencias: ""
       }),
       menuRepository.create({
         title: "Família Costa - Janeiro",
@@ -238,7 +238,7 @@ describe("Find All Menus Use Case", () => {
         adults: 3,
         kids: 1,
         restricoes: [],
-        preferencias: null
+        preferencias: ""
       })
     ])
 
@@ -248,7 +248,7 @@ describe("Find All Menus Use Case", () => {
     })
 
     expect(menus).toHaveLength(1)
-    expect(menus[0].titulo).toBe("Família Silva - Janeiro")
+    expect(menus[0]?.titulo).toBe("Família Silva - Janeiro")
   })
 
   it("should paginate results correctly", async () => {
@@ -260,7 +260,7 @@ describe("Find All Menus Use Case", () => {
         adults: 2,
         kids: 0,
         restricoes: [],
-        preferencias: null
+        preferencias: ""
       })
     )
     await Promise.all(menuPromises)
