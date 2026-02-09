@@ -45,24 +45,16 @@ describe('Accept Variation Use Case (Integration)', () => {
     })
 
     const dish = await dishRepository.create({
-      nome: "Macarrão à Bolonhesa",
+      nome: `Prato Base ${Math.random()}`,
       categoria: CategoriaPrato.ALMOCO,
     })
 
-    await Promise.all([
-      ingredientRepository.create(dish.id, {
-        nome: "Macarrão",
-        quantidade: 400,
-        unidade: "g",
-        categoria: CategoriaIngrediente.OUTROS
-      }),
-      ingredientRepository.create(dish.id, {
-        nome: "Molho de Tomate",
-        quantidade: 200,
-        unidade: "g",
-        categoria: CategoriaIngrediente.TEMPERO
-      })
-    ])
+    await ingredientRepository.create(dish.id, {
+      nome: `Macarrão ${Math.random()}`,
+      quantidade: 400,
+      unidade: "g",
+      categoria: CategoriaIngrediente.OUTROS
+    })
 
     const meal = await mealRepository.create({
       menuId: menu.id,
@@ -70,7 +62,6 @@ describe('Accept Variation Use Case (Integration)', () => {
       type: TipoRefeicao.ALMOCO,
       dishes: [dish.id]
     })
-
 
     const suggestsVariation = await menuAiRepository.variations({
       pratoOriginal: dish.nome,
@@ -82,28 +73,43 @@ describe('Accept Variation Use Case (Integration)', () => {
     })
 
     const chosenVariation = suggestsVariation.dishes[0]
-    console.log("Variacao Escolhida", chosenVariation)
+
     if (!chosenVariation) {
-      throw new Error("AI did not return any dishes")
+      throw new Error("A IA não retornou nenhuma variação para o teste")
     }
+
+    console.log("Variação Real da IA:", chosenVariation.nome)
 
     await sut.execute(
       {
-        menuId: menu.id,
-        sugestaoEscolhida: chosenVariation
+        sugestaoEscolhida: {
+          nome: chosenVariation.nome,
+          categoria: chosenVariation.categoria,
+          ingredientes: chosenVariation.ingredientes.map(ing => ({
+            nome: ing.nome,
+            quantidade: ing.quantidade,
+            unidade: ing.unidade,
+            categoria: ing.categoria
+          }))
+        }
       },
       {
         menuId: menu.id,
         mealId: meal.id,
-        oldPlateId: meal.pratos[0]!.id,
+        oldPlateId: dish.id,
       },
     )
 
     const updatedMenu = await menuRepository.findById(menu.id)
+    const mealAtualizada = updatedMenu?.refeicoes.find(r => r.id === meal.id)
 
-    expect(updatedMenu?.refeicoes).toHaveLength(1)
-    expect(updatedMenu?.refeicoes[0]?.pratos[0]?.nome).toBe(chosenVariation.nome)
-  })
+    expect(mealAtualizada?.pratos[0]?.nome).toBe(chosenVariation.nome)
+
+    const newDishId = mealAtualizada?.pratos[0]?.id
+    const dishWithIngredients = await dishRepository.findById({ dishId: newDishId! })
+    expect(dishWithIngredients?.ingredientes.length).toBeGreaterThan(0)
+
+  }, 60000)
 
   it('should throw ResourceNotFoundError if meal does not exist', async () => {
     const input = {

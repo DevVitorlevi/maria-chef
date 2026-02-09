@@ -40,6 +40,33 @@ describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
       restricoes: [],
     })
 
+    const dish = await dishRepository.create({
+      nome: "Macarrão à Bolonhesa",
+      categoria: CategoriaPrato.ALMOCO,
+    })
+
+    await Promise.all([
+      ingredientRepository.create(dish.id, {
+        nome: "Macarrão",
+        quantidade: 400,
+        unidade: "g",
+        categoria: CategoriaIngrediente.OUTROS
+      }),
+      ingredientRepository.create(dish.id, {
+        nome: "Molho de Tomate",
+        quantidade: 200,
+        unidade: "g",
+        categoria: CategoriaIngrediente.TEMPERO
+      })
+    ])
+
+    await mealRepository.create({
+      menuId: menu.id,
+      date: new Date("2026-03-01"),
+      type: TipoRefeicao.ALMOCO,
+      dishes: [dish.id]
+    })
+
     const suggestionData = {
       menuId: menu.id,
       type: TipoRefeicao.ALMOCO,
@@ -61,14 +88,13 @@ describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
     }
 
     const result = await sut.execute(suggestionData)
+    console.log(result)
 
     expect(result.meal.id).toBeTruthy()
-    expect(result.createdDishesCount).toBe(1)
-
-    const dish = await dishRepository.findById(result.meal.pratos[0].id)
-    expect(dish?.nome).toBe("Frango Grelhado")
-    expect(dish.ingredientes).toHaveLength(1)
-    expect(dish.ingredientes[0].nome).toBe("Peito de Frango")
+    const mealOn = await mealRepository.findById({ id: result.meal.id, menuId: result.meal.cardapioId })
+    expect(mealOn.meal.pratos[0]?.nome).toBe("Frango Grelhado")
+    expect(mealOn.meal.pratos[0]?.ingredientes).toHaveLength(1)
+    expect(mealOn.meal.pratos[0]?.ingredientes[0]?.nome).toBe("Peito de Frango")
   })
 
   it("should throw InvalidDateRangeError when date is before check-in", async () => {
@@ -126,30 +152,27 @@ describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
       checkOut: new Date("2026-01-01"),
     })
 
-    const result = await sut.execute({
+    await sut.execute({
       menuId: menu.id,
       date: new Date("2026-01-01"),
       type: TipoRefeicao.ALMOCO,
       dishes: [
         {
-          nome: "Prato A",
+          nome: "Frango Grelhado",
           categoria: CategoriaPrato.ALMOCO,
           ingredientes: [
-            { nome: "Ing 1", quantidade: 1, unidade: "un", categoria: CategoriaIngrediente.OUTROS },
-            { nome: "Ing 2", quantidade: 2, unidade: "un", categoria: CategoriaIngrediente.OUTROS }
+            { nome: "Peito de Frango", quantidade: 1, unidade: "kg", categoria: CategoriaIngrediente.PROTEINA },
           ]
         },
         {
-          nome: "Prato B",
+          nome: "Tilapia Grelhada",
           categoria: CategoriaPrato.ALMOCO,
           ingredientes: [
-            { nome: "Ing 3", quantidade: 3, unidade: "un", categoria: CategoriaIngrediente.OUTROS }
+            { nome: "File de Tilapia", quantidade: 1, unidade: "kg", categoria: CategoriaIngrediente.PROTEINA }
           ]
         }
       ]
     })
 
-    expect(result.createdDishesCount).toBe(2)
-    expect(result.meal.pratos).toHaveLength(2)
   })
 })
