@@ -84,3 +84,22 @@ export interface VariationSuggestionsResponse {
   categoria: string
   notes: string
 }
+
+export interface AcceptVariationInput {
+  menuId: string
+  sugestaoEscolhida: {
+    nome: string
+    categoria: CategoriaPrato
+    ingredientes: Array<{
+      nome: string
+      quantidade: number
+      unidade: string
+      categoria: CategoriaIngrediente
+    }>
+  }
+}
+export interface AcceptVariationParams {
+  menuId: string
+  mealId: string
+  oldPlateId: string
+}
