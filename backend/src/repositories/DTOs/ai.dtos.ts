@@ -86,7 +86,6 @@ export interface VariationSuggestionsResponse {
 }
 
 export interface AcceptVariationInput {
-  menuId: string
   sugestaoEscolhida: {
     nome: string
     categoria: CategoriaPrato
