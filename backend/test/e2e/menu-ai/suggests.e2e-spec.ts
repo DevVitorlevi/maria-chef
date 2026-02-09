@@ -21,7 +21,7 @@ describe("Menu AI Suggests (E2E)", () => {
     vi.mocked(groq.chat.completions.create).mockRejectedValue(new Error("API Down"))
 
     const menu = await request(app.server).post("/cardapio").send({
-      title: "Menu Erro",
+      title: "Menu Maria",
       checkIn: "2026-02-01",
       checkOut: "2026-02-05",
       adults: 2,
@@ -38,23 +38,23 @@ describe("Menu AI Suggests (E2E)", () => {
   it("should send correct context to IA", async () => {
     const mockResponse = {
       sugestoes: [
-        {
-          nome: "Prato 1",
-          categoria: "ALMOCO",
-          ingredientes: [{ nome: "Ing 1", quantidade: 1, unidade: "un", categoria: "PROTEINA" }]
-        },
-        {
-          nome: "Prato 2",
-          categoria: "ALMOCO",
-          ingredientes: [{ nome: "Ing 2", quantidade: 1, unidade: "un", categoria: "GRAOS" }]
-        },
-        {
-          nome: "Prato 3",
-          categoria: "ALMOCO",
-          ingredientes: [{ nome: "Ing 3", quantidade: 1, unidade: "un", categoria: "HORTIFRUTI" }]
-        }
-      ],
-      observacoes: "Mock"
+          {
+            nome: "Pargo Assado",
+            categoria: "ALMOCO",
+            ingredientes: [{ nome: "Pargo", quantidade: 1, unidade: "kg", categoria: "PROTEINA" }],
+          },
+          {
+            nome: "Tilapia Grelhada",
+            categoria: "ALMOCO",
+            ingredientes: [{ nome: "File de Tilapia", quantidade: 1, unidade: "kg", categoria: "PROTEINA" }],
+          },
+          {
+            nome: "Lagosta Frita",
+            categoria: "ALMOCO",
+            ingredientes: [{ nome: "Lagosta", quantidade: 1, unidade: "kg", categoria: "PROTEINA" }],
+          }
+        ],
+      notes: ""
     }
 
     vi.mocked(groq.chat.completions.create).mockResolvedValue({
@@ -87,18 +87,30 @@ describe("Menu AI Suggests (E2E)", () => {
         message: {
           content: JSON.stringify({
             sugestoes: [
-              { nome: "S1", categoria: "ALMOCO", ingredientes: [{ nome: "I1", quantidade: 1, unidade: "un", categoria: "OUTROS" }] },
-              { nome: "S2", categoria: "ALMOCO", ingredientes: [{ nome: "I1", quantidade: 1, unidade: "un", categoria: "OUTROS" }] },
-              { nome: "S3", categoria: "ALMOCO", ingredientes: [{ nome: "I1", quantidade: 1, unidade: "un", categoria: "OUTROS" }] }
-            ],
-            observacoes: "Ok"
+          {
+            nome: "Pargo Assado",
+            categoria: "ALMOCO",
+            ingredientes: [{ nome: "Pargo", quantidade: 1, unidade: "kg", categoria: "PROTEINA" }],
+          },
+          {
+            nome: "Tilapia Grelhada",
+            categoria: "ALMOCO",
+            ingredientes: [{ nome: "File de Tilapia", quantidade: 1, unidade: "kg", categoria: "PROTEINA" }],
+          },
+          {
+            nome: "Lagosta Frita",
+            categoria: "ALMOCO",
+            ingredientes: [{ nome: "Lagosta", quantidade: 1, unidade: "kg", categoria: "PROTEINA" }],
+          }
+        ],
+            notes: ""
           })
         }
       }]
     } as any)
 
     const menu = await request(app.server).post("/cardapio").send({
-      title: "Schema",
+      title: "Menu Maria",
       checkIn: "2026-02-01",
       checkOut: "2026-02-05",
       adults: 2,
