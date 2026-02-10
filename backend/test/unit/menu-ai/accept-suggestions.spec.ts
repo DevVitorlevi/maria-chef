@@ -68,7 +68,6 @@ describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
     })
 
     const suggestionData = {
-      menuId: menu.id,
       type: TipoRefeicao.ALMOCO,
       date: new Date("2026-02-02"),
       dishes: [
@@ -87,7 +86,10 @@ describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
       ]
     }
 
-    const result = await sut.execute(suggestionData)
+    const result = await sut.execute(
+      { menuId: menu.id },
+      suggestionData
+    )
     console.log(result)
 
     expect(result.meal.id).toBeTruthy()
@@ -106,12 +108,14 @@ describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
     })
 
     await expect(
-      sut.execute({
-        menuId: menu.id,
-        date: new Date("2026-05-09"),
-        type: TipoRefeicao.JANTAR,
-        dishes: []
-      })
+      sut.execute(
+        { menuId: menu.id, },
+        {
+          date: new Date("2026-05-09"),
+          type: TipoRefeicao.JANTAR,
+          dishes: []
+        }
+      )
     ).rejects.toBeInstanceOf(InvalidDateError)
   })
 
@@ -124,23 +128,27 @@ describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
     })
 
     await expect(
-      sut.execute({
-        menuId: menu.id,
-        date: new Date("2026-05-16"),
-        type: TipoRefeicao.JANTAR,
-        dishes: []
-      })
+      sut.execute(
+        { menuId: menu.id },
+        {
+          date: new Date("2026-05-16"),
+          type: TipoRefeicao.JANTAR,
+          dishes: []
+        }
+      )
     ).rejects.toBeInstanceOf(InvalidDateError)
   })
 
   it("should throw ResourceNotFoundError when menu does not exist", async () => {
     await expect(
-      sut.execute({
-        menuId: "id-inexistente",
-        date: new Date(),
-        type: TipoRefeicao.ALMOCO,
-        dishes: []
-      })
+      sut.execute(
+        { menuId: "id-inexistente" },
+        {
+          date: new Date(),
+          type: TipoRefeicao.ALMOCO,
+          dishes: []
+        }
+      )
     ).rejects.toBeInstanceOf(ResourceNotFoundError)
   })
 
@@ -152,27 +160,28 @@ describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
       checkOut: new Date("2026-01-01"),
     })
 
-    await sut.execute({
-      menuId: menu.id,
-      date: new Date("2026-01-01"),
-      type: TipoRefeicao.ALMOCO,
-      dishes: [
-        {
-          nome: "Frango Grelhado",
-          categoria: CategoriaPrato.ALMOCO,
-          ingredientes: [
-            { nome: "Peito de Frango", quantidade: 1, unidade: "kg", categoria: CategoriaIngrediente.PROTEINA },
-          ]
-        },
-        {
-          nome: "Tilapia Grelhada",
-          categoria: CategoriaPrato.ALMOCO,
-          ingredientes: [
-            { nome: "File de Tilapia", quantidade: 1, unidade: "kg", categoria: CategoriaIngrediente.PROTEINA }
-          ]
-        }
-      ]
-    })
-
+    await sut.execute(
+      { menuId: menu.id },
+      {
+        date: new Date("2026-01-01"),
+        type: TipoRefeicao.ALMOCO,
+        dishes: [
+          {
+            nome: "Frango Grelhado",
+            categoria: CategoriaPrato.ALMOCO,
+            ingredientes: [
+              { nome: "Peito de Frango", quantidade: 1, unidade: "kg", categoria: CategoriaIngrediente.PROTEINA },
+            ]
+          },
+          {
+            nome: "Tilapia Grelhada",
+            categoria: CategoriaPrato.ALMOCO,
+            ingredientes: [
+              { nome: "File de Tilapia", quantidade: 1, unidade: "kg", categoria: CategoriaIngrediente.PROTEINA }
+            ]
+          }
+        ]
+      }
+    )
   })
 })
