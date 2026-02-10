@@ -1,4 +1,5 @@
 import { TipoRefeicao } from "@/generated/prisma/enums"
+import type { AISuggestedDish } from "@/repositories/DTOs/ai.dtos"
 import { makeAcceptMenuAISuggestionsUseCase } from "@/use-cases/factories/menu-ai/make-accept-suggestions-use-case"
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import type { FastifyReply, FastifyRequest } from "fastify"
@@ -37,12 +38,10 @@ export async function acceptSuggestions(
 
     const acceptSuggestionsUseCase = makeAcceptMenuAISuggestionsUseCase()
 
-    const result = await acceptSuggestionsUseCase.execute({
-      menuId,
-      date,
-      type,
-      dishes: suggestions as any,
-    })
+    const result = await acceptSuggestionsUseCase.execute(
+      { menuId },
+      { type, date, dishes: suggestions as AISuggestedDish[] }
+    )
 
     return reply.status(201).send(result)
   } catch (error) {

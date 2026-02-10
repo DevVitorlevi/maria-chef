@@ -98,12 +98,14 @@ describe("Menu AI Accept Integration", () => {
     }
 
     const menuId = menu.id
-    await acceptUseCase.execute({
-      menuId,
-      date: new Date("2026-03-02"),
-      type: TipoRefeicao.ALMOCO,
-      dishes: [chosenDish],
-    })
+    await acceptUseCase.execute(
+      { menuId },
+      {
+        date: new Date("2026-03-02"),
+        type: TipoRefeicao.ALMOCO,
+        dishes: [chosenDish],
+      }
+    )
 
     const updatedMenu = await menuRepository.findById(menu.id)
     console.log("Refeicoes Atualizadas:", updatedMenu?.refeicoes[0]?.pratos)
