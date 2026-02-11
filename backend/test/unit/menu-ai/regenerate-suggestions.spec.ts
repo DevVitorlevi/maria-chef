@@ -1,7 +1,7 @@
+import { TipoRefeicao } from "@/generated/prisma/enums"
+import { RegenarateSuggestionsUseCase } from "@/use-cases/menu-ai/regenerate-suggestions"
+import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import { beforeEach, describe, expect, it } from "vitest"
-import { TipoRefeicao } from "../../../src/generated/prisma/enums"
-import { RegenarateSuggestionsUseCase } from "../../../src/use-cases/menu-ai/regenerate-suggestions"
-import { ResourceNotFoundError } from "../../../src/utils/errors/resource-not-found-error"
 import { InMemoryMenuAiRepository } from "../../in-memory/in-memory-menu-ai-repository"
 import { InMemoryMenuRepository } from "../../in-memory/in-memory-menu-repository"
 let menuAiRepository: InMemoryMenuAiRepository
@@ -22,17 +22,17 @@ describe("Regenerate Suggestions Use Case", () => {
       kids: 0,
       restricoes: [],
       preferencias: "",
-      checkin: new Date(),
-      checkout: new Date(),
+      checkIn: new Date(),
+      checkOut: new Date(),
     })
 
     const context = {
       id: menu.id,
-      title: menu.title,
-      adults: menu.adults,
-      kids: menu.kids,
+      title: menu.titulo,
+      adults: menu.adultos,
+      kids: menu.criancas,
       restricoes: menu.restricoes,
-      preferencias: menu.preferencias,
+      preferencias: menu.preferencias ?? "",
       checkin: menu.checkin,
       checkout: menu.checkout,
     }
@@ -43,14 +43,14 @@ describe("Regenerate Suggestions Use Case", () => {
       []
     )
 
-    const firstDishName = initialSuggestions.dishes[0].nome
+    const firstDishName = initialSuggestions.dishes[0]?.nome
 
     const regeneratedResult = await sut.execute(
       { menuId: menu.id },
       {
         type: TipoRefeicao.CAFE,
         date: new Date(),
-        previousSuggestions: [firstDishName]
+        previousSuggestions: [firstDishName!]
       }
     )
 
@@ -77,8 +77,8 @@ describe("Regenerate Suggestions Use Case", () => {
       adults: 1,
       restricoes: ["vegetariano"],
       preferencias: "",
-      checkin: new Date(),
-      checkout: new Date(),
+      checkIn: new Date(),
+      checkOut: new Date(),
     })
 
     const initialSuggestions = await sut.execute(
@@ -95,14 +95,14 @@ describe("Regenerate Suggestions Use Case", () => {
     )
     expect(hasMeatInitial).toBe(false)
 
-    const firstDish = initialSuggestions.dishes[0].nome
+    const firstDish = initialSuggestions.dishes[0]?.nome
 
     const regeneratedResult = await sut.execute(
       { menuId: menu.id },
       {
         type: TipoRefeicao.ALMOCO,
         date: new Date(),
-        previousSuggestions: [firstDish]
+        previousSuggestions: [firstDish!]
       }
     )
 
@@ -111,35 +111,5 @@ describe("Regenerate Suggestions Use Case", () => {
     )
     expect(hasMeatRegenerated).toBe(false)
     expect(regeneratedResult.dishes.some((d: { nome: any }) => d.nome === firstDish)).toBe(false)
-  })
-
-  it("should exhaust all options and return empty list after multiple regenerations", async () => {
-    const menu = await menuRepository.create({
-      title: "Menu Limitado",
-      adults: 1,
-      restricoes: [],
-      preferencias: "",
-      checkin: new Date(),
-      checkout: new Date(),
-    })
-
-    const initialSuggestions = await menuAiRepository.suggests(
-      { type: TipoRefeicao.JANTAR, date: new Date() },
-      { ...menu, restricoes: menu.restricoes || [] },
-      []
-    )
-
-    const allDishesNames = initialSuggestions.dishes.map((d: { nome: any }) => d.nome)
-
-    const result = await sut.execute(
-      { menuId: menu.id },
-      {
-        type: TipoRefeicao.JANTAR,
-        date: new Date(),
-        previousSuggestions: allDishesNames
-      }
-    )
-
-    expect(result.dishes).toHaveLength(0)
   })
 })

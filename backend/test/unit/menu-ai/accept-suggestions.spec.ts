@@ -1,9 +1,9 @@
+import { Ingrediente } from "@/generated/prisma/client"
+import { CategoriaIngrediente, CategoriaPrato, TipoRefeicao } from "@/generated/prisma/enums"
+import { AcceptMenuAISuggestionsUseCase } from "@/use-cases/menu-ai/accept-suggestions"
+import { InvalidDateError } from "@/utils/errors/invalid-date-error"
+import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import { beforeEach, describe, expect, it } from "vitest"
-import { Ingrediente } from "../../../src/generated/prisma/client"
-import { CategoriaIngrediente, CategoriaPrato, TipoRefeicao } from "../../../src/generated/prisma/enums"
-import { AcceptMenuAISuggestionsUseCase } from "../../../src/use-cases/menu-ai/accept-suggestions"
-import { InvalidDateError } from "../../../src/utils/errors/invalid-date-error"
-import { ResourceNotFoundError } from "../../../src/utils/errors/resource-not-found-error"
 import { InMemoryDishRepository } from "../../in-memory/in-memory-dish-repository"
 import { InMemoryIngredientRepository } from "../../in-memory/in-memory-ingredient-repository"
 import { InMemoryMealRepository } from "../../in-memory/in-memory-meal-repository"
@@ -62,7 +62,7 @@ describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
 
     await mealRepository.create({
       menuId: menu.id,
-      date: new Date("2026-03-01"),
+      date: new Date("2026-02-01"),
       type: TipoRefeicao.ALMOCO,
       dishes: [dish.id]
     })
@@ -90,26 +90,32 @@ describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
       { menuId: menu.id },
       suggestionData
     )
-    console.log(result)
 
     expect(result.meal.id).toBeTruthy()
-    const mealOn = await mealRepository.findById({ id: result.meal.id, menuId: result.meal.cardapioId })
+
+    const mealOn = await mealRepository.findById({
+      id: result.meal.id,
+      menuId: result.meal.cardapioId
+    })
+
+    expect(mealOn.meal.pratos).toHaveLength(1)
     expect(mealOn.meal.pratos[0]?.nome).toBe("Frango Grelhado")
     expect(mealOn.meal.pratos[0]?.ingredientes).toHaveLength(1)
     expect(mealOn.meal.pratos[0]?.ingredientes[0]?.nome).toBe("Peito de Frango")
   })
 
-  it("should throw InvalidDateRangeError when date is before check-in", async () => {
+  it("should throw InvalidDateError when date is before check-in", async () => {
     const menu = await menuRepository.create({
       title: "Menu Curto",
       adults: 1,
       checkIn: new Date("2026-05-10"),
       checkOut: new Date("2026-05-15"),
+      restricoes: [],
     })
 
     await expect(
       sut.execute(
-        { menuId: menu.id, },
+        { menuId: menu.id },
         {
           date: new Date("2026-05-09"),
           type: TipoRefeicao.JANTAR,
@@ -119,12 +125,13 @@ describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
     ).rejects.toBeInstanceOf(InvalidDateError)
   })
 
-  it("should throw InvalidDateRangeError when date is after check-out", async () => {
+  it("should throw InvalidDateError when date is after check-out", async () => {
     const menu = await menuRepository.create({
       title: "Menu Curto",
       adults: 1,
       checkIn: new Date("2026-05-10"),
       checkOut: new Date("2026-05-15"),
+      restricoes: [],
     })
 
     await expect(
@@ -158,9 +165,10 @@ describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
       adults: 10,
       checkIn: new Date("2026-01-01"),
       checkOut: new Date("2026-01-01"),
+      restricoes: [],
     })
 
-    await sut.execute(
+    const result = await sut.execute(
       { menuId: menu.id },
       {
         date: new Date("2026-01-01"),
@@ -170,18 +178,39 @@ describe("Accept Menu AI Suggestions Use Case (Unit)", () => {
             nome: "Frango Grelhado",
             categoria: CategoriaPrato.ALMOCO,
             ingredientes: [
-              { nome: "Peito de Frango", quantidade: 1, unidade: "kg", categoria: CategoriaIngrediente.PROTEINA },
+              {
+                nome: "Peito de Frango",
+                quantidade: 1,
+                unidade: "kg",
+                categoria: CategoriaIngrediente.PROTEINA
+              },
             ]
           },
           {
             nome: "Tilapia Grelhada",
             categoria: CategoriaPrato.ALMOCO,
             ingredientes: [
-              { nome: "File de Tilapia", quantidade: 1, unidade: "kg", categoria: CategoriaIngrediente.PROTEINA }
+              {
+                nome: "File de Tilapia",
+                quantidade: 1,
+                unidade: "kg",
+                categoria: CategoriaIngrediente.PROTEINA
+              }
             ]
           }
         ]
       }
     )
+
+    expect(result.meal.id).toBeTruthy()
+
+    const mealOn = await mealRepository.findById({
+      id: result.meal.id,
+      menuId: result.meal.cardapioId
+    })
+
+    expect(mealOn.meal.pratos).toHaveLength(2)
+    expect(mealOn.meal.pratos[0]?.nome).toBe("Frango Grelhado")
+    expect(mealOn.meal.pratos[1]?.nome).toBe("Tilapia Grelhada")
   })
 })
