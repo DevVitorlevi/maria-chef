@@ -1,4 +1,5 @@
 import type {
+  SuggestsVariationsParams,
   SuggestVariationsInput,
   VariationSuggestionsResponse
 } from "@/repositories/DTOs/ai.dtos";
@@ -12,32 +13,34 @@ export class SuggestsVariationUseCase {
     private menuRepository: MenuRepository
   ) { }
 
-  async execute(input: SuggestVariationsInput & { menuId: string }): Promise<VariationSuggestionsResponse> {
-    const menu = await this.menuRepository.findById(input.menuId);
+  async execute(params: SuggestsVariationsParams, data: SuggestVariationsInput): Promise<VariationSuggestionsResponse> {
+    const menu = await this.menuRepository.findById(params.menuId);
 
     if (!menu) {
       throw new ResourceNotFoundError();
     }
 
-    let nomeDoPrato = input.pratoOriginal;
+    let nomeDoPrato: string = params.pratoOriginal;
 
     const pratoEncontrado = menu.refeicoes
       .flatMap(refeicao => refeicao.pratos)
-      .find(prato => prato.id === input.pratoOriginal);
+      .find(prato => prato.id === params.pratoOriginal);
 
     if (pratoEncontrado) {
       nomeDoPrato = pratoEncontrado.nome;
     }
 
-    const response = await this.menuAIRepository.variations({
-      pratoOriginal: nomeDoPrato,
-      contexto: {
-        tipo: input.contexto.tipo,
-        restricoes: menu.restricoes,
-        preferencias: menu.preferencias ?? "",
+    const variation = await this.menuAIRepository.variations(
+      nomeDoPrato,
+      {
+        contexto: {
+          tipo: data.contexto.tipo,
+          restricoes: menu.restricoes,
+          preferencias: menu.preferencias ?? "",
+        }
       }
-    });
+    );
 
-    return response;
+    return variation;
   }
 }
