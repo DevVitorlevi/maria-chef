@@ -52,7 +52,7 @@ describe("Menu AI Regenerate Suggestions (E2E)", () => {
       .send({
         type: TipoRefeicao.CAFE,
         date: "2026-02-02",
-        previousSuggestions: ["Omelete"]
+        previousSuggestions: []
       })
 
     expect(response.status).toBe(200)

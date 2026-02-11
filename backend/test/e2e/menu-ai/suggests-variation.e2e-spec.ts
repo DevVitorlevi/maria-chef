@@ -64,7 +64,9 @@ describe("Menu AI Suggest Variations (E2E)", () => {
       .send({
         pratoOriginal: "Frango com Creme",
         contexto: {
-          tipo: TipoRefeicao.ALMOCO
+          tipo: TipoRefeicao.ALMOCO,
+          restricoes: [],
+          preferencias: ""
         }
       })
     expect(response.status).toBe(200)
