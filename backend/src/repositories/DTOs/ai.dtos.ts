@@ -64,11 +64,14 @@ export interface RegeneratedDishSuggestions extends DishSuggestions {
   remainingRegenerations?: number
 }
 
-export interface CreateMealFromSuggestionInput {
-  menuId: string
+export interface AcceptSuggestionInput {
   date: Date
   type: TipoRefeicao
   dishes: AISuggestedDish[]
+}
+
+export interface AcceptSuggestionParams {
+  menuId: string
 }
 export interface VariationContext {
   tipo: TipoRefeicao
@@ -76,8 +79,11 @@ export interface VariationContext {
   preferencias: string
 }
 export interface SuggestVariationsInput {
-  pratoOriginal: string
   contexto: VariationContext
+}
+export interface SuggestsVariationsParams {
+  pratoOriginal: string
+  menuId: string
 }
 export interface VariationSuggestionsResponse {
   dishes: AISuggestedDish[]

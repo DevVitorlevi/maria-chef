@@ -67,7 +67,6 @@ describe("Menu AI Suggest Variations (E2E)", () => {
           tipo: TipoRefeicao.ALMOCO
         }
       })
-
     expect(response.status).toBe(200)
     expect(response.body.dishes[0]).toHaveProperty("ingredientes")
     expect(response.body.categoria).toContain("Frango com Creme")

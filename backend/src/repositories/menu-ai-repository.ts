@@ -22,6 +22,7 @@ export interface MenuAiRepository {
   ): Promise<DishSuggestions>
 
   variations(
+    pratoOriginal: string,
     data: SuggestVariationsInput
   ): Promise<VariationSuggestionsResponse>
 }

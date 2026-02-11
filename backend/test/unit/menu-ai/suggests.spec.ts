@@ -1,10 +1,9 @@
+import { Ingrediente } from "@/generated/prisma/client"
+import { TipoRefeicao } from "@/generated/prisma/enums"
+import { MenuAiSuggestsUseCase } from "@/use-cases/menu-ai/suggests"
+import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
 import { beforeEach, describe, expect, it } from "vitest"
-import { Ingrediente } from "../../../src/generated/prisma/client"
-import { TipoRefeicao } from "../../../src/generated/prisma/enums"
-import { MenuAiSuggestsUseCase } from "../../../src/use-cases/menu-ai/suggests"
-import { ResourceNotFoundError } from "../../../src/utils/errors/resource-not-found-error"
 import { InMemoryDishRepository } from "../../in-memory/in-memory-dish-repository"
-import { InMemoryIngredientRepository } from "../../in-memory/in-memory-ingredient-repository"
 import { InMemoryMealRepository } from "../../in-memory/in-memory-meal-repository"
 import { InMemoryMenuAiRepository } from "../../in-memory/in-memory-menu-ai-repository"
 import { InMemoryMenuRepository } from "../../in-memory/in-memory-menu-repository"
@@ -15,11 +14,9 @@ describe("Menu AI Suggests Use Case (Unit)", () => {
   let aiRepository: InMemoryMenuAiRepository
   let mealRepository: InMemoryMealRepository
   let dishRepository: InMemoryDishRepository
-  let ingredientRepository: InMemoryIngredientRepository
 
   beforeEach(() => {
     const sharedIngredients: Ingrediente[] = []
-    ingredientRepository = new InMemoryIngredientRepository(sharedIngredients)
     dishRepository = new InMemoryDishRepository(sharedIngredients)
     mealRepository = new InMemoryMealRepository(dishRepository)
     menuRepository = new InMemoryMenuRepository(mealRepository, dishRepository)
@@ -48,7 +45,7 @@ describe("Menu AI Suggests Use Case (Unit)", () => {
 
     expect(result.dishes).toBeInstanceOf(Array)
     expect(result.dishes.length).toBeGreaterThan(0)
-    expect(result.dishes[0].ingredientes).toBeInstanceOf(Array)
+    expect(result.dishes[0]?.ingredientes).toBeInstanceOf(Array)
     expect(result.notes).toBeTruthy()
   })
 

@@ -1,5 +1,5 @@
 import type { DishRepository } from "@/repositories/dish-repository"
-import type { CreateMealFromSuggestionInput } from "@/repositories/DTOs/ai.dtos"
+import type { AcceptSuggestionInput, AcceptSuggestionParams } from "@/repositories/DTOs/ai.dtos"
 import type { IngredientRepository } from "@/repositories/ingredient-repository"
 import type { MealRepository } from "@/repositories/meal-repository"
 import type { MenuRepository } from "@/repositories/menu-repository"
@@ -14,14 +14,14 @@ export class AcceptMenuAISuggestionsUseCase {
     private ingredientRepository: IngredientRepository
   ) { }
 
-  async execute(input: CreateMealFromSuggestionInput) {
-    const menu = await this.menuRepository.findById(input.menuId)
+  async execute(params: AcceptSuggestionParams, data: AcceptSuggestionInput) {
+    const menu = await this.menuRepository.findById(params.menuId)
 
     if (!menu) {
       throw new ResourceNotFoundError()
     }
 
-    const mealDate = new Date(input.date)
+    const mealDate = new Date(data.date)
     const checkin = new Date(menu.checkin)
     const checkout = new Date(menu.checkout)
 
@@ -35,7 +35,7 @@ export class AcceptMenuAISuggestionsUseCase {
 
     const createdDishIds: string[] = []
 
-    for (const dishAI of input.dishes) {
+    for (const dishAI of data.dishes) {
       const dish = await this.dishRepository.create({
         nome: dishAI.nome,
         categoria: dishAI.categoria,
@@ -50,9 +50,9 @@ export class AcceptMenuAISuggestionsUseCase {
     }
 
     const meal = await this.mealRepository.create({
-      menuId: input.menuId,
-      date: input.date,
-      type: input.type,
+      menuId: params.menuId,
+      date: data.date,
+      type: data.type,
       dishes: createdDishIds,
     })
 

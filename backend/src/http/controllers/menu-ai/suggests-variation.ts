@@ -22,21 +22,18 @@ export async function suggestsVariation(request: FastifyRequest, reply: FastifyR
   try {
     const suggestsVariationUseCase = makeSuggestsVariationUseCase()
 
-    const { dishes, categoria, notes } = await suggestsVariationUseCase.execute({
-      menuId,
-      pratoOriginal,
-      contexto: {
-        tipo: contexto.tipo,
-        restricoes: [],
-        preferencias: "",
-      },
-    })
+    const variations = await suggestsVariationUseCase.execute(
+      { menuId, pratoOriginal },
+      {
+        contexto: {
+          tipo: contexto.tipo,
+          restricoes: [],
+          preferencias: ""
+        }
+      }
+    )
 
-    return reply.status(200).send({
-      dishes,
-      categoria,
-      notes,
-    })
+    return reply.status(200).send(variations)
   } catch (error) {
     if (error instanceof ResourceNotFoundError) {
       return reply.status(404).send({ message: error.message })

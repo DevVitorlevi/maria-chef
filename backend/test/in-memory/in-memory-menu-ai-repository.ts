@@ -192,6 +192,7 @@ export class InMemoryMenuAiRepository implements MenuAiRepository {
   }
 
   async variations(
+    pratoOriginal: string,
     data: SuggestVariationsInput
   ): Promise<VariationSuggestionsResponse> {
     const variationMocks: AISuggestedDish[] = [
@@ -232,7 +233,7 @@ export class InMemoryMenuAiRepository implements MenuAiRepository {
 
     return {
       dishes: filteredVariations,
-      categoria: `Variações para ${data.pratoOriginal}`,
+      categoria: `Variações para ${pratoOriginal}`,
       notes: "Substituições mockadas mantendo o estilo tropical."
     }
   }
