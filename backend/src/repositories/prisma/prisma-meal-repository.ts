@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma"
-import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error"
-import type { CreateMealInput, DeleteMealsParams, FindByIdMealParams, UpdateMealInput, UpdateMealParams } from "../DTOs/meal.dtos"
+import type {
+  CreateMealInput,
+  DeleteMealsParams,
+  FindByIdMealParams,
+  UpdateMealInput,
+  UpdateMealParams
+} from "../DTOs/meal.dtos"
 import type { MealRepository } from "../meal-repository"
 
 export class PrismaMealRepository implements MealRepository {
@@ -11,9 +16,7 @@ export class PrismaMealRepository implements MealRepository {
         data: data.date,
         tipo: data.type,
         pratos: {
-          connect: data.dishes.map((dishId) => ({
-            id: dishId,
-          })),
+          connect: data.dishes.map((dishId) => ({ id: dishId })),
         },
       },
       include: {
@@ -25,29 +28,28 @@ export class PrismaMealRepository implements MealRepository {
   }
 
   async delete(params: DeleteMealsParams) {
-    return await prisma.refeicao.delete({
+    return prisma.refeicao.delete({
       where: {
         id: params.id,
-        cardapioId: params.menuId
-      }
+        cardapioId: params.menuId,
+      },
     })
-
   }
 
   async update(params: UpdateMealParams, data?: UpdateMealInput) {
     const meal = await prisma.refeicao.update({
       where: {
         id: params.mealId,
-        cardapioId: params.menuId
+        cardapioId: params.menuId,
       },
       data: {
         ...(data?.date !== undefined && { data: data.date }),
         ...(data?.type !== undefined && { tipo: data.type }),
         ...(data?.dishes !== undefined && {
           pratos: {
-            set: data.dishes.map(dishId => ({ id: dishId }))
-          }
-        })
+            set: data.dishes.map((dishId) => ({ id: dishId })),
+          },
+        }),
       },
       include: {
         pratos: {
@@ -55,10 +57,10 @@ export class PrismaMealRepository implements MealRepository {
             id: true,
             nome: true,
             categoria: true,
-            createdAt: true
-          }
-        }
-      }
+            createdAt: true,
+          },
+        },
+      },
     })
 
     return {
@@ -68,11 +70,12 @@ export class PrismaMealRepository implements MealRepository {
         data: meal.data,
         tipo: meal.tipo,
         pratos: meal.pratos,
-        createdAt: meal.createdAt
-      }
+        createdAt: meal.createdAt,
+      },
     }
   }
 
+  // ✅ CORREÇÃO AQUI — NÃO lança erro
   async findById(params: FindByIdMealParams) {
     const meal = await prisma.refeicao.findFirst({
       where: {
@@ -88,9 +91,7 @@ export class PrismaMealRepository implements MealRepository {
       },
     })
 
-    if (!meal) {
-      throw new ResourceNotFoundError()
-    }
+    if (!meal) return null
 
     return {
       meal: {
@@ -98,12 +99,12 @@ export class PrismaMealRepository implements MealRepository {
         cardapioId: meal.cardapioId,
         data: meal.data,
         tipo: meal.tipo,
-        pratos: meal.pratos.map(dish => ({
+        pratos: meal.pratos.map((dish) => ({
           id: dish.id,
           nome: dish.nome,
           categoria: dish.categoria,
           createdAt: dish.createdAt,
-          ingredientes: dish.ingredientes.map(ing => ({
+          ingredientes: dish.ingredientes.map((ing) => ({
             id: ing.id,
             pratoId: ing.pratoId,
             nome: ing.nome,
@@ -115,6 +116,5 @@ export class PrismaMealRepository implements MealRepository {
         createdAt: meal.createdAt,
       },
     }
-
   }
 }

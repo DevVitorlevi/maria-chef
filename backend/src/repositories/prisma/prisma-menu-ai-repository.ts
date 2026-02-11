@@ -66,9 +66,15 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
     return this.mapAiResponseToDishSuggestions(aiResponse, data, context)
   }
 
-  async variations(data: SuggestVariationsInput): Promise<VariationSuggestionsResponse> {
+  async variations(pratoOriginal: string, data: SuggestVariationsInput): Promise<VariationSuggestionsResponse> {
+    if (!data || !data.contexto) {
+      throw new Error("Contexto é obrigatório para gerar variações")
+    }
+
+    const { contexto } = data
+
     const prompt = `
-      Você é um Chef de Cozinha. O usuário deseja variar o prato "${data.pratoOriginal}".
+      Você é um Chef de Cozinha. O usuário deseja variar o prato "${pratoOriginal}".
       Sugira de 3 a 5 variações ou substituições COMPLETAS (com ingredientes).
 
       DIRETRIZES TÉCNICAS (OBRIGATÓRIO):
@@ -77,9 +83,9 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
       3. NATURALIDADE: Não fique repetindo nomes de cidades ou estados nos pratos (Ex: use apenas "Castanha de Caju" em vez de "Castanha do Ceará").
       
       CONTEXTO:
-      - Tipo: ${TIPO_TEXTO[data.contexto.tipo]}
-      - Restrições: ${data.contexto.restricoes.join(", ")}
-      - Preferências: ${data.contexto.preferencias}
+      - Tipo: ${TIPO_TEXTO[contexto.tipo]}
+      - Restrições: ${contexto.restricoes?.length ? contexto.restricoes.join(", ") : "Nenhuma"}
+      - Preferências: ${contexto.preferencias || "Nenhuma especificada"}
 
       Responda APENAS com JSON:
       {
@@ -92,7 +98,7 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
             ]
           }
         ],
-        "observacoes": "Por que estas variações são boas substitutas para ${data.pratoOriginal}."
+        "observacoes": "Por que estas variações são boas substitutas para ${pratoOriginal}."
       }
     `
     const aiResponse = await this.callGroqWithRetry(prompt, groqResponseSchema)
@@ -108,7 +114,7 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
           categoria: ing.categoria as CategoriaIngrediente,
         }))
       })),
-      categoria: `Variações para ${data.pratoOriginal}`,
+      categoria: `Variações para ${pratoOriginal}`,
       notes: aiResponse.observacoes
     }
   }
@@ -255,7 +261,7 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
       - PROIBIDO REPETIR: [${listaNegra.join(", ")}].
 
       PÚBLICO: ${context.adults} adultos e ${context.kids ?? 0} crianças.
-      RESTRIÇÕES: ${context.restricoes.join(", ")}.
+      RESTRIÇÕES: ${context.restricoes?.length ? context.restricoes.join(", ") : "Nenhuma"}.
 
       FORMATO:
       {
