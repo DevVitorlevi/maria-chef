@@ -32,14 +32,14 @@ describe("Accept Variation (E2E)", () => {
         type: TipoRefeicao.ALMOCO,
         date: "2026-02-02",
         suggestions: [{
-          nome: "Frango Grelhado", 
+          nome: "Frango Grelhado",
           categoria: "ALMOCO",
           ingredientes: [{ nome: "Peito de Frango", quantidade: 1, unidade: "un", categoria: "PROTEINA" }]
         }]
       })
 
-    const mealId = mealRes.body.meal.id
-    const oldPlateId = mealRes.body.meal.pratos[0].id
+    const mealId = mealRes.body.data.meal.id
+    const oldPlateId = mealRes.body.data.meal.pratos[0].id
 
     const acceptRes = await request(app.server)
       .patch(`/cardapio/${menuId}/meals/${mealId}/variations/${oldPlateId}/accept`)
@@ -55,29 +55,29 @@ describe("Accept Variation (E2E)", () => {
       })
 
     expect(acceptRes.status).toBe(201)
-    expect(acceptRes.body.dish.nome).toBe("Frango ao Curry Especial")
+    expect(acceptRes.body.data.dish.nome).toBe("Frango ao Curry Especial")
 
     const verify = await request(app.server).get(`/cardapio/${menuId}`)
     const menuData = verify.body.menu || verify.body
     const mealInDb = menuData.refeicoes.find((m: any) => m.id === mealId)
-    
+
     expect(mealInDb.pratos.map((p: any) => p.nome)).toContain("Frango ao Curry Especial")
   })
-  
-    it("should return 404 if trying to accept variation for non-existent meal", async () => {
-      const randomId = "00000000-0000-0000-0000-000000000000"
-  
-      const res = await request(app.server)
-        .patch(`/cardapio/${randomId}/meals/${randomId}/variations/${randomId}/accept`)
-        .send({
-          menuId: randomId,
-          sugestaoEscolhida: {
-            nome: "Prato Teste",
-            categoria: CategoriaPrato.ALMOCO,
-            ingredientes: []
-          }
-        })
-  
-      expect(res.status).toBe(404)
-    })
+
+  it("should return 404 if trying to accept variation for non-existent meal", async () => {
+    const randomId = "00000000-0000-0000-0000-000000000000"
+
+    const res = await request(app.server)
+      .patch(`/cardapio/${randomId}/meals/${randomId}/variations/${randomId}/accept`)
+      .send({
+        menuId: randomId,
+        sugestaoEscolhida: {
+          nome: "Prato Teste",
+          categoria: CategoriaPrato.ALMOCO,
+          ingredientes: []
+        }
+      })
+
+    expect(res.status).toBe(400)
+  })
 })
