@@ -79,8 +79,11 @@ export interface VariationContext {
   preferencias: string
 }
 export interface SuggestVariationsInput {
-  pratoOriginal: string
   contexto: VariationContext
+}
+export interface SuggestsVariationsParams {
+  pratoOriginal: string
+  menuId: string
 }
 export interface VariationSuggestionsResponse {
   dishes: AISuggestedDish[]
