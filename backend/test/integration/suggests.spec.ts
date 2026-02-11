@@ -1,10 +1,10 @@
-import { config } from "dotenv"
-import { beforeEach, describe, expect, it } from "vitest"
 import { TipoRefeicao } from "@/generated/prisma/enums"
+import { MenuAiSuggestsUseCase } from "@/use-cases/menu-ai/suggests"
 import { PrismaMenuAIRepository } from "@repositories/prisma/prisma-menu-ai-repository"
 import { PrismaMenuRepository } from "@repositories/prisma/prisma-menu-repository"
-import { MenuAiSuggestsUseCase } from "@/use-cases/menu-ai/suggests"
+import { config } from "dotenv"
 import { setupE2E } from "test/utils/setup-e2e"
+import { beforeEach, describe, expect, it } from "vitest"
 
 config()
 

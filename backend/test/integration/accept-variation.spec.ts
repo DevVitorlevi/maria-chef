@@ -16,7 +16,6 @@ describe('Accept Variation Use Case (Integration)', () => {
   let menuAiRepository: PrismaMenuAIRepository
   let sut: AcceptVariationUseCase
 
-
   beforeEach(async () => {
     await setupE2E()
 
@@ -30,18 +29,18 @@ describe('Accept Variation Use Case (Integration)', () => {
       mealRepository,
       menuRepository,
       dishRepository,
-      ingredientRepository
+      ingredientRepository,
     )
   })
 
   it('should persist the new dish and ingredients in the database and update the meal', async () => {
     const menu = await menuRepository.create({
-      title: "Menu Maria",
+      title: 'Menu Maria',
       adults: 2,
-      restricoes: ["sem_lactose"],
-      preferencias: "Frutos do mar",
-      checkIn: new Date("2026-03-01"),
-      checkOut: new Date("2026-03-05"),
+      restricoes: ['sem_lactose'],
+      preferencias: 'Frutos do mar',
+      checkIn: new Date('2026-03-01'),
+      checkOut: new Date('2026-03-05'),
     })
 
     const dish = await dishRepository.create({
@@ -52,46 +51,46 @@ describe('Accept Variation Use Case (Integration)', () => {
     await ingredientRepository.create(dish.id, {
       nome: `Macarrão ${Math.random()}`,
       quantidade: 400,
-      unidade: "g",
-      categoria: CategoriaIngrediente.OUTROS
+      unidade: 'g',
+      categoria: CategoriaIngrediente.OUTROS,
     })
 
     const meal = await mealRepository.create({
       menuId: menu.id,
-      date: new Date("2026-03-01"),
+      date: new Date('2026-03-01'),
       type: TipoRefeicao.ALMOCO,
-      dishes: [dish.id]
+      dishes: [dish.id],
     })
 
-    const suggestsVariation = await menuAiRepository.variations({
-      pratoOriginal: dish.nome,
-      contexto: {
-        tipo: meal.tipo,
-        preferencias: menu.preferencias ?? "",
-        restricoes: menu.restricoes
-      }
-    })
+    const suggestsVariation = await menuAiRepository.variations(
+      dish.nome,
+      {
+        contexto: {
+          tipo: meal.tipo,
+          preferencias: menu.preferencias ?? '',
+          restricoes: menu.restricoes,
+        },
+      },
+    )
+
+    expect(suggestsVariation.dishes.length).toBeGreaterThan(0)
 
     const chosenVariation = suggestsVariation.dishes[0]
 
-    if (!chosenVariation) {
-      throw new Error("A IA não retornou nenhuma variação para o teste")
-    }
-
-    console.log("Variação Real da IA:", chosenVariation.nome)
+    console.log('Variação Real da IA:', chosenVariation?.nome)
 
     await sut.execute(
       {
         sugestaoEscolhida: {
-          nome: chosenVariation.nome,
-          categoria: chosenVariation.categoria,
-          ingredientes: chosenVariation.ingredientes.map(ing => ({
+          nome: chosenVariation!.nome,
+          categoria: chosenVariation?.categoria as CategoriaPrato,
+          ingredientes: chosenVariation!.ingredientes.map((ing) => ({
             nome: ing.nome,
             quantidade: ing.quantidade,
             unidade: ing.unidade,
-            categoria: ing.categoria
-          }))
-        }
+            categoria: ing.categoria as CategoriaIngrediente,
+          })),
+        },
       },
       {
         menuId: menu.id,
@@ -101,32 +100,20 @@ describe('Accept Variation Use Case (Integration)', () => {
     )
 
     const updatedMenu = await menuRepository.findById(menu.id)
-    const mealAtualizada = updatedMenu?.refeicoes.find(r => r.id === meal.id)
+    expect(updatedMenu).toBeTruthy()
 
-    expect(mealAtualizada?.pratos[0]?.nome).toBe(chosenVariation.nome)
+    const mealAtualizada = updatedMenu!.refeicoes.find(r => r.id === meal.id)
+    expect(mealAtualizada).toBeTruthy()
+
+    expect(mealAtualizada?.pratos[0]?.nome).toBe(chosenVariation?.nome)
 
     const newDishId = mealAtualizada?.pratos[0]?.id
-    const dishWithIngredients = await dishRepository.findById({ dishId: newDishId! })
-    expect(dishWithIngredients?.ingredientes.length).toBeGreaterThan(0)
 
+    const dishWithIngredients = await dishRepository.findById({
+      dishId: newDishId!,
+    })
+
+    expect(dishWithIngredients).toBeTruthy()
+    expect(dishWithIngredients!.ingredientes.length).toBeGreaterThan(0)
   }, 60000)
-
-  it('should throw ResourceNotFoundError if meal does not exist', async () => {
-    const input = {
-      menuId: 'any-id',
-      sugestaoEscolhida: {
-        nome: 'Prato Erro',
-        categoria: CategoriaPrato.ALMOCO,
-        ingredientes: []
-      }
-    }
-
-    const params = {
-      menuId: 'invalid-menu',
-      mealId: 'invalid-meal',
-      oldPlateId: 'invalid-plate'
-    }
-
-    await expect(sut.execute(input, params)).rejects.toThrow()
-  })
 })

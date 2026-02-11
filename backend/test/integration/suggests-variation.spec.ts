@@ -69,11 +69,13 @@ describe("Menu AI Suggest Variations Integration", () => {
       dishes: [dish.id]
     })
 
-    const result = await suggestsVariationUseCase.execute({
-      menuId: menu.id,
-      pratoOriginal: dish.nome,
-      contexto: { tipo: meal.tipo, restricoes: menu.restricoes, preferencias: menu.preferencias ?? "" }
-    })
+    const result = await suggestsVariationUseCase.execute(
+      {
+        menuId: menu.id,
+        pratoOriginal: dish.nome,
+      },
+      { contexto: { tipo: meal.tipo, restricoes: menu.restricoes, preferencias: menu.preferencias ?? "" } }
+    )
 
     console.log("--- RESULTADO CENÁRIO NORMAL ---")
     console.log("Título:", result.categoria)
@@ -120,11 +122,13 @@ describe("Menu AI Suggest Variations Integration", () => {
       dishes: [dish.id]
     })
 
-    const result = await suggestsVariationUseCase.execute({
-      menuId: menu.id,
-      pratoOriginal: dish.nome,
-      contexto: { tipo: meal.tipo, restricoes: menu.restricoes, preferencias: menu.preferencias ?? "" }
-    })
+    const result = await suggestsVariationUseCase.execute(
+      {
+        menuId: menu.id,
+        pratoOriginal: dish.nome
+      },
+      { contexto: { tipo: meal.tipo, restricoes: menu.restricoes, preferencias: menu.preferencias ?? "" } }
+    )
 
     console.log("--- RESULTADO CENÁRIO VEGETARIANO ---")
     console.log("Título:", result.categoria)
