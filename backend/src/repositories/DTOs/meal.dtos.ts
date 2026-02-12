@@ -1,10 +1,10 @@
-import type { CategoriaIngrediente, CategoriaPrato, TipoRefeicao } from "@/generated/prisma/enums"
+import type { CategoryOfDish, CategoryOfIngredient, TypeOfMeal } from "@/generated/prisma/enums"
 import type { Decimal } from "@prisma/client/runtime/client"
 
 export interface CreateMealInput {
   menuId: string
   date: Date
-  type: TipoRefeicao
+  type: TypeOfMeal
   dishes: string[]
 }
 export interface DeleteMealsParams {
@@ -17,19 +17,19 @@ export interface UpdateMealParams {
 }
 export interface UpdateMealInput {
   date?: Date
-  type?: TipoRefeicao
+  type?: TypeOfMeal
   dishes?: string[]
 }
 export interface UpdateMealOutput {
   meal: {
     id: string
-    cardapioId: string
-    data: Date
-    tipo: TipoRefeicao
-    pratos: Array<{
+    menuId: string
+    date: Date
+    type: TypeOfMeal
+    dishes: Array<{
       id: string
-      nome: string
-      categoria: CategoriaPrato
+      name: string
+      category: CategoryOfDish
       createdAt: Date
     }>
     createdAt: Date
@@ -42,21 +42,21 @@ export interface FindByIdMealParams {
 export interface FindByIdMealOutput {
   meal: {
     id: string
-    cardapioId: string
-    data: Date
-    tipo: TipoRefeicao
-    pratos: Array<{
+    menuId: string
+    date: Date
+    type: TypeOfMeal
+    dishes: Array<{
       id: string
-      nome: string
-      categoria: CategoriaPrato
+      name: string
+      category: CategoryOfDish
       createdAt: Date
-      ingredientes: {
+      ingredients: {
         id: string
-        pratoId: string
-        nome: string
-        quantidade: Decimal
-        unidade: string
-        categoria: CategoriaIngrediente
+        dishId: string
+        name: string
+        quantify: Decimal
+        unit: string
+        category: CategoryOfIngredient
       }[]
     }>
     createdAt: Date

@@ -1,28 +1,28 @@
-import type { CategoriaIngrediente, CategoriaPrato } from "@/generated/prisma/enums";
+import type { CategoryOfDish, CategoryOfIngredient } from "@/generated/prisma/enums";
 import type { Decimal } from "@prisma/client/runtime/client";
 export interface CreateDishInput {
-  nome: string;
-  categoria: CategoriaPrato;
+  name: string;
+  category: CategoryOfDish;
 }
 export interface CreateDishOutput {
   dish: {
     id: string
-    nome: string;
-    categoria: CategoriaPrato;
+    name: string;
+    category: CategoryOfDish;
     createdAt: Date
   }
 }
 export interface FindAllDishesFiltersInput {
-  nome?: string | undefined
-  categoria?: CategoriaPrato | undefined
+  name?: string | undefined
+  category?: CategoryOfDish | undefined
 }
 
 export interface FindAllDishesOutput {
   dishes:
   {
     id: string
-    nome: string;
-    categoria: CategoriaPrato;
+    name: string;
+    category: CategoryOfDish;
     createdAt: Date
   }[]
 }
@@ -32,36 +32,36 @@ export interface FindByIdDishParams {
 export interface FindByIdDishOutput {
   dish: {
     id: string
-    nome: string
-    categoria: CategoriaPrato
+    name: string
+    category: CategoryOfDish
     createdAt: Date
-    ingredientes: {
+    ingredients: {
       id: string
-      pratoId: string
-      nome: string
-      quantidade: Decimal
-      unidade: string
-      categoria: CategoriaIngrediente
+      dishId: string
+      name: string
+      quantify: Decimal
+      unit: string
+      category: CategoryOfIngredient
     }[]
   }
 }
 export interface UpdateDishInput {
-  nome?: string;
-  categoria?: CategoriaPrato;
+  name?: string;
+  category?: CategoryOfDish;
 }
 export interface UpdateDishOutput {
   dish: {
     id: string
-    nome: string
-    categoria: CategoriaPrato
+    name: string
+    category: CategoryOfDish
     createdAt: Date
-    ingredientes: {
+    ingredients: {
       id: string
-      pratoId: string
-      nome: string
-      quantidade: Decimal
-      unidade: string
-      categoria: CategoriaIngrediente
+      dishId: string
+      name: string
+      quantify: Decimal
+      unit: string
+      category: CategoryOfIngredient
     }[]
   }
 }
@@ -71,16 +71,16 @@ export interface DuplicateDishParams {
 export interface DuplicateDishOutput {
   dish: {
     id: string
-    nome: string
-    categoria: CategoriaPrato
+    name: string
+    category: CategoryOfDish
     createdAt: Date
-    ingredientes: {
+    ingredients: {
       id: string
-      pratoId: string
-      nome: string
-      quantidade: Decimal
-      unidade: string
-      categoria: CategoriaIngrediente
+      dishId: string
+      name: string
+      quantify: Decimal
+      unit: string
+      category: CategoryOfIngredient
     }[]
   }
 }

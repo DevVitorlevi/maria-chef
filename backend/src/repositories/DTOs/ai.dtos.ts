@@ -1,15 +1,11 @@
-import type {
-  CategoriaIngrediente,
-  CategoriaPrato,
-  TipoRefeicao
-} from "@/generated/prisma/enums"
+import type { CategoryOfDish, CategoryOfIngredient, TypeOfMeal } from "@/generated/prisma/enums"
 
 export interface SuggestDishesParams {
   menuId: string
 }
 
 export interface SuggestDishesInput {
-  type: TipoRefeicao
+  type: TypeOfMeal
   date: Date
 }
 
@@ -23,39 +19,39 @@ export interface MenuContext {
   id: string
   title: string
   adults: number
-  kids?: number
-  restricoes: string[]
-  preferencias: string
+  child?: number
+  restrictions: string[]
+  preferences: string
   checkin: Date
   checkout: Date
 }
 
 export interface AISuggestedIngredient {
-  nome: string
-  quantidade: number
-  unidade: string
-  categoria: CategoriaIngrediente
+  name: string
+  quantify: number
+  unit: string
+  category: CategoryOfIngredient
 }
 
 export interface AISuggestedDish {
-  nome: string
-  categoria: CategoriaPrato
-  ingredientes: AISuggestedIngredient[]
+  name: string
+  category: CategoryOfDish
+  ingredients: AISuggestedIngredient[]
 }
 
 export interface DishSuggestions {
   dishes: AISuggestedDish[]
   context: {
     menu: string
-    type: TipoRefeicao
+    type: TypeOfMeal
     date?: Date
     people: {
       adults: number
-      kids: number
+      child: number
       total: number
     }
-    restricoes: string[]
-    preferencias?: string
+    restrictions: string[]
+    preferences?: string
   }
   notes: string
 }
@@ -66,7 +62,7 @@ export interface RegeneratedDishSuggestions extends DishSuggestions {
 
 export interface AcceptSuggestionInput {
   date: Date
-  type: TipoRefeicao
+  type: TypeOfMeal
   dishes: AISuggestedDish[]
 }
 
@@ -74,32 +70,32 @@ export interface AcceptSuggestionParams {
   menuId: string
 }
 export interface VariationContext {
-  tipo: TipoRefeicao
-  restricoes: string[]
-  preferencias: string
+  type: TypeOfMeal
+  restrictions: string[]
+  preferences: string
 }
 export interface SuggestVariationsInput {
-  contexto: VariationContext
+  context: VariationContext
 }
 export interface SuggestsVariationsParams {
-  pratoOriginal: string
+  originalDish: string
   menuId: string
 }
 export interface VariationSuggestionsResponse {
   dishes: AISuggestedDish[]
-  categoria: string
+  category: string
   notes: string
 }
 
 export interface AcceptVariationInput {
   sugestaoEscolhida: {
     nome: string
-    categoria: CategoriaPrato
-    ingredientes: Array<{
-      nome: string
-      quantidade: number
-      unidade: string
-      categoria: CategoriaIngrediente
+    category: CategoryOfDish
+    ingredients: Array<{
+      name: string
+      quantify: number
+      unit: string
+      category: CategoryOfIngredient
     }>
   }
 }

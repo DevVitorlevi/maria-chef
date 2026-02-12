@@ -1,25 +1,24 @@
-import type { CategoriaPrato, TipoRefeicao } from "@/generated/prisma/client"
+import type { CategoryOfDish, TypeOfMeal } from "@/generated/prisma/enums"
 
 export interface CreateMenuInput {
   title: string
   checkIn: Date
   checkOut: Date
   adults: number
-  kids?: number
-  restricoes?: string[],
-  preferencias?: string | undefined
+  child?: number
+  restrictions?: string[],
+  preferences?: string | undefined
 }
 export interface CreateMenuOutput {
   menu: {
     id: string
-    titulo: string
+    title: string
     checkin: Date
     checkout: Date
-    adultos: number
-    criancas: number
-    restricoes: string[]
-    preferencias: string
-    geradoPorIA: boolean
+    adults: number
+    child: number
+    restrictions: string[]
+    preferences: string
     createdAt: Date
     updatedAt: Date
   }
@@ -30,23 +29,22 @@ export interface FindByIdMenuParams {
 export interface FindByIdMenuOutput {
   menu: {
     id: string
-    titulo: string
+    title: string
     checkin: Date
     checkout: Date
-    adultos: number
-    criancas: number
-    restricoes: string[]
-    preferencias: string
-    geradoPorIA: boolean
-    refeicoes: Array<{
+    adults: number
+    child: number
+    restrictions: string[]
+    preferences: string
+    meals: Array<{
       id: string
-      cardapioId: string
-      data: Date
-      tipo: TipoRefeicao
-      pratos: Array<{
+      menuId: string
+      date: Date
+      type: TypeOfMeal
+      dishes: Array<{
         id: string
-        nome: string
-        categoria: CategoriaPrato
+        name: string
+        category: CategoryOfDish
         createdAt: Date
       }>
       createdAt: Date
@@ -56,22 +54,21 @@ export interface FindByIdMenuOutput {
   }
 }
 export interface FindAllFiltersParams {
-  titulo?: string | undefined
-  data?: string | undefined
+  title?: string | undefined
+  date?: string | undefined
   page?: number | undefined
   limit?: number | undefined
 }
 export interface FindAllMenusOutput {
   menus: {
     id: string
-    titulo: string
+    title: string
     checkin: Date
     checkout: Date
-    adultos: number
-    criancas: number
-    restricoes: string[]
-    preferencias: string
-    geradoPorIA: boolean
+    adults: number
+    child: number
+    restrictions: string[]
+    preferences: string
     createdAt: Date
     updatedAt: Date
   }[]
@@ -84,21 +81,20 @@ export interface UpdateMenuInput {
   checkIn?: Date
   checkOut?: Date
   adults?: number
-  kids?: number
-  restricoes?: string[]
-  preferencias?: string
+  child?: number
+  restrictions?: string[]
+  preferences?: string
 }
 export interface UpdateMenuOutput {
   menu: {
     id: string
-    titulo: string
+    title: string
     checkin: Date
     checkout: Date
-    adultos: number
-    criancas: number
-    restricoes: string[]
-    preferencias: string
-    geradoPorIA: boolean
+    adults: number
+    child: number
+    restrictions: string[]
+    preferences: string
     createdAt: Date
     updatedAt: Date
   }
@@ -109,25 +105,24 @@ export interface DuplicateMenuParams {
 export interface DuplicateMenuOutput {
   cardapio: {
     id: string
-    titulo: string
+    title: string
     checkin: Date
     checkout: Date
-    adultos: number
-    criancas: number
-    restricoes: string[]
-    preferencias: string
-    geradoPorIA: boolean
+    adults: number
+    child: number
+    restrictions: string[]
+    preferences: string
     createdAt: Date
     updatedAt: Date
-    refeicoes: Array<{
+    meals: Array<{
       id: string
-      cardapioId: string
-      data: Date
-      tipo: TipoRefeicao
-      pratos: Array<{
+      menuId: string
+      date: Date
+      type: TypeOfMeal
+      dishes: Array<{
         id: string
-        nome: string
-        categoria: CategoriaPrato
+        name: string
+        category: CategoryOfDish
         createdAt: Date
       }>
       createdAt: Date
