@@ -1,29 +1,35 @@
-import type { CategoriaPrato, TipoRefeicao } from "@/generated/prisma/enums"
+import type { CategoryOfDish, TypeOfMeal } from "@/generated/prisma/enums"
 
 export type Menu = {
   id: string
-  titulo: string
+  title: string
   checkin: Date
   checkout: Date
-  adultos: number
-  criancas: number
-  restricoes: string[]
-  preferencias: string | null
-  geradoPorIA: boolean
+  adults: number
+  child: number
+  restrictions: string[]
+  preferences: string | null
   createdAt: Date
   updatedAt: Date
-  refeicoes: Meal[]
+  meals: Meal[]
 }
+
 export type Meal = {
   id: string
-  cardapioId: string
-  data: Date
-  tipo: TipoRefeicao
-  pratos: Array<{
+  menuId: string
+  date: Date
+  type: TypeOfMeal
+  dishes: Array<{
     id: string
-    nome: string
-    categoria: CategoriaPrato
+    name: string
+    category: CategoryOfDish
     createdAt: Date
+    ingredients: Array<{
+      name: string
+      quantify: number
+      unit: string
+      category: CategoriaIngrediente
+    }>
   }>
   createdAt: Date
 }
