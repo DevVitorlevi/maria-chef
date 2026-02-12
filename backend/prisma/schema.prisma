@@ -7,105 +7,112 @@ datasource db {
   provider = "postgresql"
 }
 
-model Cardapio {
+model Menu {
   id           String   @id @default(uuid())
-  titulo       String   @db.VarChar(100)
+  title        String   @db.VarChar(100)
   checkin      DateTime @db.Date
   checkout     DateTime @db.Date
-  adultos      Int
-  criancas     Int      @default(0)
-  restricoes   String[] @default([])
-  preferencias String?  @db.VarChar(500)
-  geradoPorIA  Boolean  @default(false) @map("gerado_por_ia")
+  adults       Int
+  child        Int?     @default(0)
+  restrictions String[] @default([])
+  preferences  String?  @db.VarChar(500)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  refeicoes    Refeicao[]
-  listaCompras ListaCompras?
+  meals        Meal[]
+  shoppinglist ShoppingList?
 
   @@index([createdAt(sort: Desc)])
   @@index([checkin, checkout])
-  @@map("cardapios")
+  @@map("menus")
 }
 
-model Refeicao {
-  id         String       @id @default(uuid())
-  cardapioId String       @map("cardapio_id")
-  data       DateTime     @db.Date
-  tipo       TipoRefeicao
-  createdAt  DateTime     @default(now()) @map("created_at")
+model Meal {
+  id        String     @id @default(uuid())
+  menuId    String     @map("menu_id")
+  date      DateTime   @db.Date
+  type      TypeOfMeal
+  createdAt DateTime   @default(now()) @map("created_at")
 
-  cardapio Cardapio @relation(fields: [cardapioId], references: [id], onDelete: Cascade)
-  pratos   Prato[]  @relation("RefeicaoPratos")
+  menu   Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  dishes Dish[] @relation("MealDishes")
 
-  @@unique([cardapioId, data, tipo])
-  @@index([cardapioId, data])
-  @@map("refeicoes")
+  @@unique([menuId, date, type])
+  @@index([menuId, date])
+  @@map("meals")
 }
 
-model Prato {
+model Dish {
   id        String         @id @default(uuid())
-  nome      String         @unique @db.VarChar(100)
-  categoria CategoriaPrato
+  name      String         @unique @db.VarChar(100)
+  category  CategoryOfDish
   createdAt DateTime       @default(now()) @map("created_at")
 
-  ingredientes Ingrediente[]
-  refeicoes    Refeicao[]    @relation("RefeicaoPratos")
+  ingredients Ingredient[]
+  meals       Meal[]       @relation("MealDishes")
 
-  @@index([categoria])
-  @@map("pratos")
+  @@index([category])
+  @@map("dishes")
 }
 
-model Ingrediente {
-  id         String               @id @default(uuid())
-  pratoId    String               @map("prato_id")
-  nome       String               @db.VarChar(100)
-  quantidade Decimal              @db.Decimal(10, 2)
-  unidade    String               @db.VarChar(20)
-  categoria  CategoriaIngrediente
+model Ingredient {
+  id       String               @id @default(uuid())
+  dishId   String               @map("dish_id")
+  name     String               @db.VarChar(100)
+  quantify Decimal              @db.Decimal(10, 2)
+  unit     String               @db.VarChar(20)
+  category CategoryOfIngredient
 
-  prato Prato @relation(fields: [pratoId], references: [id], onDelete: Cascade)
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Cascade)
 
-  @@index([pratoId])
-  @@index([categoria])
-  @@map("ingredientes")
+  @@index([dishId])
+  @@index([category])
+  @@map("ingredients")
 }
 
-model ListaCompras {
-  id         String   @id @default(uuid())
-  cardapioId String   @unique @map("cardapio_id")
-  itens      Json     @default("[]") @db.JsonB
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+model ShoppingList {
+  id        String   @id @default(uuid())
+  menuId    String   @unique @map("menu_id")
+  itens     Json     @default("[]") @db.JsonB
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  cardapio Cardapio @relation(fields: [cardapioId], references: [id], onDelete: Cascade)
+  menu Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
 
-  @@map("listas_compras")
+  @@map("shopping_list")
 }
 
-enum TipoRefeicao {
-  CAFE
-  ALMOCO
-  JANTAR
+enum TypeOfMeal {
+  BREAKFAST
+  LUNCH
+  DESERT
+  SNACK
+  DINNER
 }
 
-enum CategoriaPrato {
-  CAFE_MANHA
-  ALMOCO
-  JANTAR
-  SOBREMESA
-  LANCHE
+enum CategoryOfDish {
+  BREAKFAST
+  LUNCH
+  DESERT
+  SNACK
+  DINNER
 }
 
-enum CategoriaIngrediente {
-  HORTIFRUTI
-  PROTEINA
-  LATICINIO
-  GRAOS
+enum CategoryOfIngredient {
+  PRODUCE
+  PROTEIN
+  DAIRY
+  GRAIN
+  CEREAL
+  MASS
+  FARINACEUS
+  OIL
+  CANNED
+  SAUCES
+  MORNING
+  BAKING
   TEMPERO
-  BEBIDA
-  CONGELADO
-  PADARIA
-  HIGIENE
+  SNACKS
+  CANDY
   OUTROS
 }
