@@ -1,33 +1,43 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { ResourceNotFoundError } from "@/utils/errors/resource-not-found-error";
-import type { CreateMenuInput, FindAllFiltersParams, FindAllMenusOutput, FindByIdMenuOutput, UpdateMenuInput } from "../DTOs/menu.dtos";
+import type { CreateMenuInput, FindAllFiltersParams, UpdateMenuInput } from "../DTOs/menu.dtos";
 import type { MenuRepository } from "../menu-repository";
 
 export class PrismaMenuRepository implements MenuRepository {
   async create(data: CreateMenuInput) {
-    const menu = await prisma.cardapio.create({
+    const menu = await prisma.menu.create({
       data: {
-        titulo: data.title,
+        title: data.title,
         checkin: data.checkIn,
         checkout: data.checkOut,
-        adultos: data.adults,
-        criancas: data.kids ?? 0,
-        restricoes: data.restricoes ?? [],
-        preferencias: data.preferencias ?? null,
-        geradoPorIA: false,
+        adults: data.adults,
+        child: data.child ?? 0,
+        restrictions: data.restrictions ?? [],
+        preferences: data.preferences ?? null,
       }
     })
-    return menu
+
+    return {
+      menu: {
+        ...menu,
+        child: menu.child ?? 0,
+        preferences: menu.preferences ?? ""
+      }
+    }
   }
 
-  async findById(menuId: string): Promise<FindByIdMenuOutput["menu"] | null> {
-    const menu = await prisma.cardapio.findUnique({
+  async findById(menuId: string) {
+    const menu = await prisma.menu.findUnique({
       where: { id: menuId },
       include: {
-        refeicoes: {
+        meals: {
           include: {
-            pratos: true,
+            dishes: {
+              include: {
+                ingredients: true,
+              }
+            },
           },
         },
       },
@@ -35,74 +45,74 @@ export class PrismaMenuRepository implements MenuRepository {
 
     if (!menu) return null;
 
-    const preferencias = menu.preferencias ?? "";
-
-    const refeicoes = menu.refeicoes.map(r => ({
-      id: r.id,
-      cardapioId: r.cardapioId,
-      data: r.data,
-      tipo: r.tipo,
-      createdAt: r.createdAt,
-      pratos: r.pratos.map(p => ({
-        id: p.id,
-        nome: p.nome,
-        categoria: p.categoria,
-        createdAt: p.createdAt,
-      })),
-    }));
-
     return {
-      id: menu.id,
-      titulo: menu.titulo,
-      checkin: menu.checkin,
-      checkout: menu.checkout,
-      adultos: menu.adultos,
-      criancas: menu.criancas,
-      restricoes: menu.restricoes ?? [],
-      preferencias,
-      geradoPorIA: menu.geradoPorIA,
-      refeicoes,
-      createdAt: menu.createdAt,
-      updatedAt: menu.updatedAt,
+      menu: {
+        id: menu.id,
+        title: menu.title,
+        checkin: menu.checkin,
+        checkout: menu.checkout,
+        adults: menu.adults,
+        child: menu.child ?? 0,
+        restrictions: menu.restrictions ?? [],
+        preferences: menu.preferences ?? "",
+        createdAt: menu.createdAt,
+        updatedAt: menu.updatedAt,
+        meals: menu.meals.map(meal => ({
+          id: meal.id,
+          menuId: meal.menuId,
+          date: meal.date,
+          type: meal.type,
+          createdAt: meal.createdAt,
+          dishes: meal.dishes.map(dish => ({
+            id: dish.id,
+            name: dish.name,
+            category: dish.category,
+            createdAt: dish.createdAt,
+            ingredients: dish.ingredients
+          })),
+        })),
+      }
     };
   }
 
 
-  async findAll(params?: FindAllFiltersParams): Promise<FindAllMenusOutput> {
+  async findAll(params?: FindAllFiltersParams) {
     const page = params?.page || 1;
     const limit = params?.limit || 20;
     const limitCapped = Math.min(limit, 100);
     const skip = (page - 1) * limitCapped;
 
-    const where: Prisma.CardapioWhereInput = {};
+    const where: Prisma.MenuWhereInput = {};
 
-    if (params?.titulo) {
-      where.titulo = {
-        contains: params.titulo,
+    if (params?.title) {
+      where.title = {
+        contains: params.title,
         mode: 'insensitive'
       };
     }
 
-    if (params?.data) {
-      const dataFiltro = new Date(params.data);
+    if (params?.date) {
+      const filterDate = new Date(params.date);
       where.AND = [
-        { checkin: { lte: dataFiltro } },
-        { checkout: { gte: dataFiltro } }
+        { checkin: { lte: filterDate } },
+        { checkout: { gte: filterDate } }
       ];
     }
 
     const [menusRaw, total] = await Promise.all([
-      prisma.cardapio.findMany({
+      prisma.menu.findMany({
         where,
         skip,
-        take: limitCapped
+        take: limitCapped,
+        orderBy: { createdAt: 'desc' }
       }),
-      prisma.cardapio.count({ where })
+      prisma.menu.count({ where })
     ]);
 
     const menus = menusRaw.map(menu => ({
       ...menu,
-      preferencias: menu.preferencias ?? ""
+      child: menu.child ?? 0,
+      preferences: menu.preferences ?? ""
     }));
 
     const totalPages = Math.ceil(total / limitCapped);
@@ -115,34 +125,41 @@ export class PrismaMenuRepository implements MenuRepository {
     };
   }
 
-
   async update(id: string, data: UpdateMenuInput) {
-    const menu = await prisma.cardapio.update({
+    const menu = await prisma.menu.update({
       where: { id },
       data: {
-        ...(data.title !== undefined && { titulo: data.title }),
+        ...(data.title !== undefined && { title: data.title }),
         ...(data.checkIn !== undefined && { checkin: data.checkIn }),
         ...(data.checkOut !== undefined && { checkout: data.checkOut }),
-        ...(data.adults !== undefined && { adultos: data.adults }),
-        ...(data.kids !== undefined && { criancas: data.kids }),
-        ...(data.restricoes !== undefined && { restricoes: data.restricoes }),
-        ...(data.preferencias !== undefined && { preferencias: data.preferencias }),
+        ...(data.adults !== undefined && { adults: data.adults }),
+        ...(data.child !== undefined && { child: data.child }),
+        ...(data.restrictions !== undefined && { restrictions: data.restrictions }),
+        ...(data.preferences !== undefined && { preferences: data.preferences }),
       },
       include: {
-        refeicoes: {
-          include: { pratos: true }
+        meals: {
+          include: {
+            dishes: {
+              include: { ingredients: true }
+            }
+          }
         }
       }
     });
 
     const menuNormalized = {
       ...menu,
-      preferencias: menu.preferencias ?? "",
-      refeicoes: menu.refeicoes.map(r => ({
-        ...r,
-        pratos: r.pratos.map(p => ({
-          ...p,
-          categoria: p.categoria
+      child: menu.child ?? 0,
+      preferences: menu.preferences ?? "",
+      meals: menu.meals.map(meal => ({
+        ...meal,
+        dishes: meal.dishes.map(dish => ({
+          id: dish.id,
+          name: dish.name,
+          category: dish.category,
+          createdAt: dish.createdAt,
+          ingredients: dish.ingredients
         }))
       }))
     };
@@ -152,71 +169,78 @@ export class PrismaMenuRepository implements MenuRepository {
 
   async duplicate(menuId: string) {
     return prisma.$transaction(async tx => {
-      const currentMenu = await tx.cardapio.findUnique({
+      const currentMenu = await tx.menu.findUnique({
         where: { id: menuId },
         include: {
-          refeicoes: {
-            include: { pratos: true }
+          meals: {
+            include: { dishes: true }
           }
         }
       });
 
       if (!currentMenu) throw new ResourceNotFoundError();
 
-      const duplicatedMenu = await tx.cardapio.create({
+      const duplicatedMenu = await tx.menu.create({
         data: {
-          titulo: `${currentMenu.titulo} (cópia)`,
+          title: `${currentMenu.title} (cópia)`,
           checkin: currentMenu.checkin,
           checkout: currentMenu.checkout,
-          adultos: currentMenu.adultos,
-          criancas: currentMenu.criancas,
-          preferencias: currentMenu.preferencias,
-          restricoes: currentMenu.restricoes,
-          geradoPorIA: currentMenu.geradoPorIA,
+          adults: currentMenu.adults,
+          child: currentMenu.child ?? 0,
+          preferences: currentMenu.preferences,
+          restrictions: currentMenu.restrictions,
         }
       });
 
-      for (const refeicao of currentMenu.refeicoes) {
-        await tx.refeicao.create({
+      for (const meal of currentMenu.meals) {
+        await tx.meal.create({
           data: {
-            cardapioId: duplicatedMenu.id,
-            data: refeicao.data,
-            tipo: refeicao.tipo,
-            pratos: {
-              connect: refeicao.pratos.map(p => ({ id: p.id }))
+            menuId: duplicatedMenu.id,
+            date: meal.date,
+            type: meal.type,
+            dishes: {
+              connect: meal.dishes.map(p => ({ id: p.id }))
             }
           }
         });
       }
 
-      const duplicatedMenuWithRelations = await tx.cardapio.findUnique({
+      const duplicatedMenuWithRelations = await tx.menu.findUnique({
         where: { id: duplicatedMenu.id },
         include: {
-          refeicoes: { include: { pratos: true } }
+          meals: {
+            include: {
+              dishes: {
+                include: { ingredients: true }
+              }
+            }
+          }
         }
       });
 
       if (!duplicatedMenuWithRelations) throw new Error("Erro ao recuperar cardápio duplicado");
-
       const normalized = {
         ...duplicatedMenuWithRelations,
-        preferencias: duplicatedMenuWithRelations.preferencias ?? "",
-        refeicoes: duplicatedMenuWithRelations.refeicoes.map(r => ({
-          ...r,
-          pratos: r.pratos.map(p => ({
-            ...p,
-            categoria: p.categoria
+        child: duplicatedMenuWithRelations.child ?? 0,
+        preferences: duplicatedMenuWithRelations.preferences ?? "",
+        meals: duplicatedMenuWithRelations.meals.map(meal => ({
+          ...meal,
+          dishes: meal.dishes.map(dish => ({
+            id: dish.id,
+            name: dish.name,
+            category: dish.category,
+            createdAt: dish.createdAt,
+            ingredients: dish.ingredients
           }))
         }))
       };
 
-      return { cardapio: normalized };
+      return { menu: normalized }
     });
   }
 
-
   async delete(id: string) {
-    return await prisma.cardapio.delete({
+    return await prisma.menu.delete({
       where: {
         id
       }

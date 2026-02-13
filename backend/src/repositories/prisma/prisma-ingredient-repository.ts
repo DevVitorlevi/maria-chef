@@ -6,27 +6,31 @@ import type {
 
 export class PrismaIngredientRepository implements IngredientRepository {
   async create(dishId: string, data: CreateIngredientInput) {
-    return await prisma.ingrediente.create({
+    const ingredient = await prisma.ingredient.create({
       data: {
         ...data,
-        pratoId: dishId,
+        dishId,
       },
     })
+
+    return {
+      ingredient
+    }
   }
 
   async update(params: UpdateIngredientParams, data: UpdateIngredientInput) {
-    return await prisma.ingrediente.update({
+    return await prisma.ingredient.update({
       where: {
         id: params.ingredientId,
-        pratoId: params.dishId
+        dishId: params.dishId
       },
       data
     })
   }
   async delete(params: DeleteIngredientParams) {
-    return await prisma.ingrediente.delete({
+    return await prisma.ingredient.delete({
       where: {
-        pratoId: params.dishId,
+        dishId: params.dishId,
         id: params.ingredientId
       }
     })

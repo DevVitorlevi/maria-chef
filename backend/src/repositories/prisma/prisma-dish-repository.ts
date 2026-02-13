@@ -1,58 +1,73 @@
-import type { Prato } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { Decimal } from "@prisma/client/runtime/client";
 import type { DishRepository } from "../dish-repository";
 import type { CreateDishInput, FindAllDishesFiltersInput, FindByIdDishParams, UpdateDishInput } from "../DTOs/dish.dtos";
 export class PrismaDishRepository implements DishRepository {
-  async create(
-    data: CreateDishInput
-  ) {
-    const prato = await prisma.prato.create({
+  async create(data: CreateDishInput) {
+    const dish = await prisma.dish.create({
       data,
     });
-    return prato;
+    return { dish };
   }
 
-  async findAll(filters?: FindAllDishesFiltersInput): Promise<Prato[]> {
-    const pratos = await prisma.prato.findMany({
+  async findAll(filters?: FindAllDishesFiltersInput) {
+    const dishes = await prisma.dish.findMany({
       where: {
-        ...(filters?.nome && {
-          nome: {
-            contains: filters.nome,
+        ...(filters?.name && {
+          name: {
+            contains: filters.name,
             mode: 'insensitive'
           }
         }),
-        ...(filters?.categoria && {
-          categoria: filters.categoria
+        ...(filters?.category && {
+          category: filters.category
         })
       }
     })
-    return pratos
+    return { dishes }
   }
 
-  async findById(
-    { dishId }: FindByIdDishParams
-  ) {
-    const dish = await prisma.prato.findUnique({
+  async findById({ dishId }: FindByIdDishParams) {
+    const dish = await prisma.dish.findUnique({
       where: {
         id: dishId
       },
       include: {
-        ingredientes: true
+        ingredients: true
       }
     })
 
-    return dish
+    if (!dish) {
+      return null;
+    }
+
+    return {
+      dish: {
+        id: dish.id,
+        name: dish.name,
+        category: dish.category,
+        createdAt: dish.createdAt,
+        ingredients: dish.ingredients.map(ingredient => ({
+          id: ingredient.id,
+          name: ingredient.name,
+          quantify: new Decimal(ingredient.quantify),
+          unit: ingredient.unit,
+          category: ingredient.category,
+          dishId: ingredient.dishId
+        }))
+      }
+    };
   }
 
   async update(
     dishId: string,
     data: UpdateDishInput
   ) {
-    const dish = await prisma.prato.update({
+    const dish = await prisma.dish.update({
       where: { id: dishId },
       data,
       include: {
-        ingredientes: true
+        ingredients: true
       }
     });
 
@@ -61,45 +76,45 @@ export class PrismaDishRepository implements DishRepository {
     };
   }
 
-  async duplicate(
-    dishId: string,
-  ) {
-    const pratoOriginal = await prisma.prato.findUnique({
+  async duplicate(dishId: string) {
+    const originalDish = await prisma.dish.findUnique({
       where: { id: dishId },
       include: {
-        ingredientes: true,
+        ingredients: true,
       },
     });
 
-    if (!pratoOriginal) {
-      throw new Error("Prato não encontrado");
+    if (!originalDish) {
+      throw new Error("dish não encontrado");
     }
 
-    const nomeDuplicado = `${pratoOriginal.nome} (cópia)`;
+    const duplicateName = `${originalDish.name} (cópia)`;
 
-    const pratoDuplicado = await prisma.prato.create({
+    const duplicateDish = await prisma.dish.create({
       data: {
-        nome: nomeDuplicado,
-        categoria: pratoOriginal.categoria,
-        ingredientes: {
-          create: pratoOriginal.ingredientes.map((ingrediente) => ({
-            nome: ingrediente.nome,
-            quantidade: ingrediente.quantidade,
-            unidade: ingrediente.unidade,
-            categoria: ingrediente.categoria,
+        name: duplicateName,
+        category: originalDish.category,
+        ingredients: {
+          create: originalDish.ingredients.map((ingredient) => ({
+            name: ingredient.name,
+            quantify: ingredient.quantify,
+            unit: ingredient.unit,
+            category: ingredient.category,
           })),
         },
       },
       include: {
-        ingredientes: true,
+        ingredients: true,
       },
     });
 
-    return pratoDuplicado;
+    return {
+      dish: duplicateDish
+    };
   }
 
   async delete(id: string) {
-    await prisma.prato.delete({
+    await prisma.dish.delete({
       where: {
         id
       }

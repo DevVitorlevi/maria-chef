@@ -1,5 +1,4 @@
 import type { Meal } from "@/@types/menu"
-import { TipoRefeicao, type CategoriaIngrediente, type CategoriaPrato } from "@/generated/prisma/enums"
 import { groq, GROQ_CONFIG } from "@/lib/groq"
 import { z } from "zod"
 
@@ -12,33 +11,37 @@ import type {
   VariationSuggestionsResponse
 } from "../DTOs/ai.dtos"
 
+import type { TypeOfMeal } from "@/generated/prisma/enums"
 import type { MenuAiRepository } from "../menu-ai-repository"
 
-const TIPO_TEXTO: Record<TipoRefeicao, string> = {
-  CAFE: "CAFÉ DA MANHÃ",
-  ALMOCO: "ALMOÇO",
-  JANTAR: "JANTAR",
+const MEAL_TYPE_TEXT: Record<TypeOfMeal, string> = {
+  BREAKFAST: "CAFÉ DA MANHÃ",
+  SNACK: "LANCHE",
+  LUNCH: "ALMOÇO",
+  DESERT: "SOBREMESA",
+  DINNER: "JANTAR",
 }
 
 const groqResponseSchema = z.object({
-  sugestoes: z.array(
+  suggestions: z.array(
     z.object({
-      nome: z.string().min(1),
-      categoria: z.enum(["CAFE_MANHA", "ALMOCO", "JANTAR", "SOBREMESA", "LANCHE"]),
-      ingredientes: z.array(
+      name: z.string().min(1),
+      category: z.enum(["BREAKFAST", "LUNCH", "DINNER", "DESERT", "SNACK"]),
+      ingredients: z.array(
         z.object({
-          nome: z.string().min(1),
-          quantidade: z.number().positive(),
-          unidade: z.string().min(1),
-          categoria: z.enum([
-            "HORTIFRUTI", "PROTEINA", "LATICINIO", "GRAOS", "TEMPERO",
-            "BEBIDA", "CONGELADO", "PADARIA", "HIGIENE", "OUTROS"
+          name: z.string().min(1),
+          quantity: z.number().positive(),
+          unit: z.string().min(1),
+          category: z.enum([
+            "PRODUCE", "PROTEIN", "DAIRY", "GRAIN", "CEREAL",
+            "MASS", "FARINACEUS", "OIL", "CANNED", "SAUCES",
+            "MORNING", "BAKING", "TEMPERO", "SNACKS", "CANDY", "OUTROS"
           ]),
         })
       ).min(1),
     })
   ).min(1),
-  observacoes: z.string().min(1),
+  notes: z.string().min(1),
 })
 
 type GroqResponse = z.infer<typeof groqResponseSchema>
@@ -51,7 +54,6 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
   ): Promise<DishSuggestions> {
     const prompt = this.buildPrompt(data.type, context, data.date, meals)
     const aiResponse = await this.callGroqWithRetry(prompt, groqResponseSchema)
-
     return this.mapAiResponseToDishSuggestions(aiResponse, data, context)
   }
 
@@ -62,60 +64,56 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
   ): Promise<DishSuggestions> {
     const prompt = this.buildPrompt(data.type, context, data.date, meals, data.previousSuggestions)
     const aiResponse = await this.callGroqWithRetry(prompt, groqResponseSchema)
-
     return this.mapAiResponseToDishSuggestions(aiResponse, data, context)
   }
 
-  async variations(pratoOriginal: string, data: SuggestVariationsInput): Promise<VariationSuggestionsResponse> {
-    if (!data || !data.contexto) {
-      throw new Error("Contexto é obrigatório para gerar variações")
-    }
+  async variations(originalDish: string, data: SuggestVariationsInput): Promise<VariationSuggestionsResponse> {
+    if (!data || !data.context) throw new Error("Context is required")
 
-    const { contexto } = data
-
+    const { context } = data
     const prompt = `
-      Você é um Chef de Cozinha. O usuário deseja variar o prato "${pratoOriginal}".
-      Sugira de 3 a 5 variações ou substituições COMPLETAS (com ingredientes).
+      You are a Professional Chef. The user wants variations for the dish "${originalDish}".
+      Suggest 3 to 5 COMPLETE variations.
 
-      DIRETRIZES TÉCNICAS (OBRIGATÓRIO):
-      1. ESPECIFIQUE OS ITENS: Nunca use apenas "Peixe", "Carne" ou "Acompanhamento".
-      2. CORTE/ESPÉCIE: Nomeie o corte (Ex: Maminha, Filé de Peito, Sobrecoxa) ou a espécie (Ex: Pargo, Sirigado, Camarão Rosa).
-      3. NATURALIDADE: Não fique repetindo nomes de cidades ou estados nos pratos (Ex: use apenas "Castanha de Caju" em vez de "Castanha do Ceará").
+      RULES:
+      1. Names and Notes must be in PORTUGUESE (PT-BR).
+      2. Specific cuts: specify if it's "Filé de Peito", "Pargo", "Picanha", etc.
+      3. Response must be JSON using these Ingredient categories: [PRODUCE, PROTEIN, DAIRY, GRAIN, CEREAL, MASS, FARINACEUS, OIL, CANNED, SAUCES, MORNING, BAKING, TEMPERO, SNACKS, CANDY, OUTROS].
       
-      CONTEXTO:
-      - Tipo: ${TIPO_TEXTO[contexto.tipo]}
-      - Restrições: ${contexto.restricoes?.length ? contexto.restricoes.join(", ") : "Nenhuma"}
-      - Preferências: ${contexto.preferencias || "Nenhuma especificada"}
+      CONTEXT:
+      - Type: ${MEAL_TYPE_TEXT[context.type]}
+      - Constraints: ${context.restrictions?.join(", ") || "None"}
+      - Preferences: ${context.preferences || "None"}
 
-      Responda APENAS com JSON:
+      JSON Structure:
       {
-        "sugestoes": [
+        "suggestions": [
           {
-            "nome": "Nome do Prato",
-            "categoria": "ALMOCO",
-            "ingredientes": [
-              {"nome": "Item Específico", "quantidade": 150, "unidade": "g", "categoria": "PROTEINA"}
+            "name": "Nome do Prato",
+            "category": "LUNCH",
+            "ingredients": [
+              {"name": "Ingrediente", "quantity": 100, "unit": "g", "category": "PROTEIN"}
             ]
           }
         ],
-        "observacoes": "Por que estas variações são boas substitutas para ${pratoOriginal}."
+        "notes": "Explicação técnica em português."
       }
     `
     const aiResponse = await this.callGroqWithRetry(prompt, groqResponseSchema)
 
     return {
-      dishes: aiResponse.sugestoes.map(dish => ({
-        nome: dish.nome,
-        categoria: dish.categoria as CategoriaPrato,
-        ingredientes: dish.ingredientes.map(ing => ({
-          nome: ing.nome,
-          quantidade: ing.quantidade,
-          unidade: ing.unidade,
-          categoria: ing.categoria as CategoriaIngrediente,
+      dishes: aiResponse.suggestions.map(dish => ({
+        name: dish.name,
+        category: dish.category,
+        ingredients: dish.ingredients.map(ing => ({
+          name: ing.name,
+          quantify: ing.quantity,
+          unit: ing.unit,
+          category: ing.category,
         }))
       })),
-      categoria: `Variações para ${pratoOriginal}`,
-      notes: aiResponse.observacoes
+      category: `Variações para ${originalDish}`,
+      notes: aiResponse.notes
     }
   }
 
@@ -125,14 +123,14 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
     context: MenuContext
   ): DishSuggestions {
     return {
-      dishes: aiResponse.sugestoes.map(dish => ({
-        nome: dish.nome,
-        categoria: dish.categoria as CategoriaPrato,
-        ingredientes: dish.ingredientes.map(ing => ({
-          nome: ing.nome,
-          quantidade: ing.quantidade,
-          unidade: ing.unidade,
-          categoria: ing.categoria as CategoriaIngrediente,
+      dishes: aiResponse.suggestions.map(dish => ({
+        name: dish.name,
+        category: dish.category,
+        ingredients: dish.ingredients.map(ing => ({
+          name: ing.name,
+          quantify: ing.quantity,
+          unit: ing.unit,
+          category: ing.category,
         }))
       })),
       context: {
@@ -140,14 +138,14 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
         type: data.type,
         people: {
           adults: context.adults,
-          kids: context.kids ?? 0,
-          total: context.adults + (context.kids ?? 0),
+          child: context.child ?? 0,
+          total: context.adults + (context.child ?? 0),
         },
-        restricoes: context.restricoes,
-        ...(context.preferencias && { preferencias: context.preferencias }),
-        ...(data.date && { date: data.date }),
+        restrictions: context.restrictions ?? [],
+        preferences: context.preferences ?? undefined,
+        date: data.date,
       },
-      notes: aiResponse.observacoes,
+      notes: aiResponse.notes,
     }
   }
 
@@ -159,7 +157,7 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
       } catch (error: any) {
         lastError = error
         if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 1000))
+          await new Promise(resolve => setTimeout(resolve, 1500))
           continue
         }
       }
@@ -175,106 +173,32 @@ export class PrismaMenuAIRepository implements MenuAiRepository {
       messages: [
         {
           role: "system",
-          content: "Você é um chef especialista. Responda APENAS com JSON. Não use Markdown.",
+          content: "You are an expert Chef. All 'name' and 'notes' must be in BRAZILIAN PORTUGUESE. Enum values must be in ENGLISH as defined in the schema.",
         },
         { role: "user", content: prompt },
       ],
     })
 
     const text = completion.choices?.[0]?.message?.content
-    if (!text) throw new Error("Groq retornou vazio")
+    if (!text) throw new Error("Empty AI response")
 
-    const rawJson = JSON.parse(text)
-    const sanitizedJson = this.sanitizeAiResponse(rawJson)
-
-    const validated = schema.safeParse(sanitizedJson)
-    if (!validated.success) {
-      throw new Error("Resposta da IA fora do padrão esperado")
-    }
-
-    return validated.data
+    return schema.parse(JSON.parse(text))
   }
 
-  private sanitizeAiResponse(data: any) {
-    if (!data.observacoes || typeof data.observacoes !== 'string' || data.observacoes.trim().length === 0) {
-      data.observacoes = "Sugestões preparadas para o seu cardápio em Icapuí.";
-    }
-
-    if (!data.sugestoes || !Array.isArray(data.sugestoes)) return data;
-
-    const mapCatPrato: Record<string, string> = {
-      'CAFÉ DA MANHÃ': 'CAFE_MANHA', 'CAFE DA MANHA': 'CAFE_MANHA', 'CAFE': 'CAFE_MANHA',
-      'ALMOÇO': 'ALMOCO', 'ALMOCO': 'ALMOCO', 'JANTAR': 'JANTAR',
-      'SOBREMESA': 'SOBREMESA', 'LANCHE': 'LANCHE'
-    };
-
-    const mapCatIng: Record<string, string> = {
-      'FRUTA': 'HORTIFRUTI', 'VEGETAL': 'HORTIFRUTI', 'LEGUME': 'HORTIFRUTI', 'VERDURA': 'HORTIFRUTI',
-      'CARNE': 'PROTEINA', 'PEIXE': 'PROTEINA', 'FRANGO': 'PROTEINA', 'OVO': 'PROTEINA',
-      'LEITE': 'LATICINIO', 'QUEIJO': 'LATICINIO', 'IOGURTE': 'LATICINIO',
-      'CEREAL': 'GRAOS', 'ARROZ': 'GRAOS', 'FEIJAO': 'GRAOS', 'MASSA': 'GRAOS',
-      'TEMPEROS': 'TEMPERO', 'ESPECIARIA': 'TEMPERO', 'SAL': 'TEMPERO'
-    };
-
-    data.sugestoes = data.sugestoes.map((s: any) => {
-      const categoriaLimpa = s.categoria?.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const categoriaFinal = mapCatPrato[s.categoria?.toUpperCase()] || mapCatPrato[categoriaLimpa] || 'ALMOCO';
-
-      return {
-        ...s,
-        nome: s.nome || "Prato Sugerido",
-        categoria: categoriaFinal,
-        ingredientes: s.ingredientes?.map((i: any) => {
-          const ingCatLimpa = i.categoria?.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-          const ingCategoriaFinal = mapCatIng[i.categoria?.toUpperCase()] || mapCatIng[ingCatLimpa] || 'OUTROS';
-
-          return {
-            ...i,
-            nome: i.nome || "Ingrediente",
-            quantidade: (typeof i.quantidade !== 'number' || i.quantidade <= 0) ? 1 : i.quantidade,
-            unidade: (!i.unidade || i.unidade.trim().length === 0) ? "un" : i.unidade,
-            categoria: ingCategoriaFinal
-          };
-        })
-      };
-    });
-
-    return data;
-  }
-
-  private buildPrompt(type: TipoRefeicao, context: MenuContext, date: Date, meals: Meal[], previousSuggestions: string[] = []): string {
-    const nomesJaUsados = meals.flatMap(m => m.pratos?.map(p => p.nome) || []).filter(Boolean);
-    const listaNegra = [...new Set([...nomesJaUsados, ...previousSuggestions])];
+  private buildPrompt(type: TypeOfMeal, context: MenuContext, date: Date, meals: Meal[], previous: string[] = []): string {
+    const blacklist = [...new Set([...meals.flatMap(m => m.dishes?.map(d => d.name) || []), ...previous])];
 
     return `
-      Você é um Chef de Cozinha. Crie sugestões de pratos para ${TIPO_TEXTO[type]} no dia ${date.toLocaleDateString("pt-BR")}.
-
-      REGRAS DE NOMENCLATURA:
-      1. ESPECIFIQUE O CORTE/ESPÉCIE: Nomeie exatamente o que será usado (Ex: Maminha, Lombo Suíno, Tilápia, Pargo, Polvo).
-      2. EVITE REPETIÇÕES GEOGRÁFICAS: Não adicione "de Icapuí" ou "do Ceará" aos nomes dos pratos ou ingredientes. Seja direto e elegante.
-      3. INGREDIENTES LOCAIS: Use ingredientes como coco, castanha, macaxeira e frutos do mar de forma natural na composição.
-
-      REGRAS TÉCNICAS:
-      - JSON APENAS.
-      - CATEGORIA DO PRATO: [CAFE_MANHA, ALMOCO, JANTAR, SOBREMESA, LANCHE].
-      - CATEGORIA DO INGREDIENTE: [HORTIFRUTI, PROTEINA, LATICINIO, GRAOS, TEMPERO, BEBIDA, CONGELADO, PADARIA, HIGIENE, OUTROS].
-      - PROIBIDO REPETIR: [${listaNegra.join(", ")}].
-
-      PÚBLICO: ${context.adults} adultos e ${context.kids ?? 0} crianças.
-      RESTRIÇÕES: ${context.restricoes?.length ? context.restricoes.join(", ") : "Nenhuma"}.
-
-      FORMATO:
-      {
-        "sugestoes": [
-          {
-            "nome": "Ex: Maminha Grelhada com Risoto de Cogumelos",
-            "categoria": "ALMOCO",
-            "ingredientes": [
-              {"nome": "Maminha", "quantidade": 500, "unidade": "g", "categoria": "PROTEINA"}
-            ]
-          }
-        ],
-        "observacoes": "Dica técnica do chef sobre o preparo."
-      }`;
+      Create menu suggestions for ${MEAL_TYPE_TEXT[type]} on ${date.toLocaleDateString("pt-BR")}.
+      
+      TECHNICAL REQUIREMENTS:
+      - Use JSON only.
+      - Dish names and notes in PORTUGUESE.
+      - Ingredient categories MUST BE one of: [PRODUCE, PROTEIN, DAIRY, GRAIN, CEREAL, MASS, FARINACEUS, OIL, CANNED, SAUCES, MORNING, BAKING, TEMPERO, SNACKS, CANDY, OUTROS].
+      - Do not suggest: [${blacklist.join(", ")}].
+      - Context: ${context.adults} adults, ${context.child ?? 0} child. Restrictions: ${context.restrictions?.join(", ") || "None"}.
+      
+      Example of ONE ingredient: {"name": "Arroz Integral", "quantity": 200, "unit": "g", "category": "GRAIN"}
+    `
   }
 }

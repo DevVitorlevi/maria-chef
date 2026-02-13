@@ -10,53 +10,57 @@ import type { MealRepository } from "../meal-repository"
 
 export class PrismaMealRepository implements MealRepository {
   async create(data: CreateMealInput) {
-    const meal = await prisma.refeicao.create({
+    const meal = await prisma.meal.create({
       data: {
-        cardapioId: data.menuId,
-        data: data.date,
-        tipo: data.type,
-        pratos: {
+        menuId: data.menuId,
+        date: data.date,
+        type: data.type,
+        dishes: {
           connect: data.dishes.map((dishId) => ({ id: dishId })),
         },
       },
       include: {
-        pratos: true,
+        dishes: {
+          include: {
+            ingredients: true,
+          },
+        },
       },
     })
 
-    return meal
+    return { meal }
   }
 
   async delete(params: DeleteMealsParams) {
-    return prisma.refeicao.delete({
+    return prisma.meal.delete({
       where: {
         id: params.id,
-        cardapioId: params.menuId,
+        menuId: params.menuId,
       },
     })
   }
 
   async update(params: UpdateMealParams, data?: UpdateMealInput) {
-    const meal = await prisma.refeicao.update({
+    const meal = await prisma.meal.update({
       where: {
         id: params.mealId,
-        cardapioId: params.menuId,
+        menuId: params.menuId,
       },
       data: {
         ...(data?.date !== undefined && { data: data.date }),
         ...(data?.type !== undefined && { tipo: data.type }),
         ...(data?.dishes !== undefined && {
-          pratos: {
+          dishes: {
             set: data.dishes.map((dishId) => ({ id: dishId })),
           },
         }),
       },
       include: {
-        pratos: {
+        dishes: {
           select: {
             id: true,
-            nome: true,
-            categoria: true,
+            name: true,
+            category: true,
             createdAt: true,
           },
         },
@@ -66,26 +70,25 @@ export class PrismaMealRepository implements MealRepository {
     return {
       meal: {
         id: meal.id,
-        cardapioId: meal.cardapioId,
-        data: meal.data,
-        tipo: meal.tipo,
-        pratos: meal.pratos,
+        menuId: meal.menuId,
+        date: meal.date,
+        type: meal.type,
+        dishes: meal.dishes,
         createdAt: meal.createdAt,
       },
     }
   }
 
-  // ✅ CORREÇÃO AQUI — NÃO lança erro
   async findById(params: FindByIdMealParams) {
-    const meal = await prisma.refeicao.findFirst({
+    const meal = await prisma.meal.findFirst({
       where: {
         id: params.id,
-        cardapioId: params.menuId,
+        menuId: params.menuId,
       },
       include: {
-        pratos: {
+        dishes: {
           include: {
-            ingredientes: true,
+            ingredients: true,
           },
         },
       },
@@ -96,21 +99,21 @@ export class PrismaMealRepository implements MealRepository {
     return {
       meal: {
         id: meal.id,
-        cardapioId: meal.cardapioId,
-        data: meal.data,
-        tipo: meal.tipo,
-        pratos: meal.pratos.map((dish) => ({
+        menuId: meal.menuId,
+        date: meal.date,
+        type: meal.type,
+        dishes: meal.dishes.map((dish) => ({
           id: dish.id,
-          nome: dish.nome,
-          categoria: dish.categoria,
+          name: dish.name,
+          category: dish.category,
           createdAt: dish.createdAt,
-          ingredientes: dish.ingredientes.map((ing) => ({
+          ingredients: dish.ingredients.map((ing) => ({
             id: ing.id,
-            pratoId: ing.pratoId,
-            nome: ing.nome,
-            quantidade: ing.quantidade,
-            unidade: ing.unidade,
-            categoria: ing.categoria,
+            dishId: ing.dishId,
+            name: ing.name,
+            quantify: ing.quantify,
+            unit: ing.unit,
+            category: ing.category,
           })),
         })),
         createdAt: meal.createdAt,
