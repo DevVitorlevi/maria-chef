@@ -103,7 +103,7 @@ export interface DuplicateMenuParams {
   menuId: string
 }
 export interface DuplicateMenuOutput {
-  cardapio: {
+  menu: {
     id: string
     title: string
     checkin: Date

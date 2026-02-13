@@ -14,7 +14,6 @@ export interface RegenerateSuggestionsParams extends SuggestDishesParams { }
 export interface RegenerateSuggestionsInput extends SuggestDishesInput {
   previousSuggestions: string[]
 }
-
 export interface MenuContext {
   id: string
   title: string

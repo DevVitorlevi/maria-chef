@@ -7,6 +7,30 @@ export interface CreateMealInput {
   type: TypeOfMeal
   dishes: string[]
 }
+
+export interface CreatMealOutput {
+  meal: {
+    id: string
+    menuId: string
+    date: Date
+    type: TypeOfMeal
+    dishes: Array<{
+      id: string
+      name: string
+      category: CategoryOfDish
+      createdAt: Date
+      ingredients: {
+        id: string
+        dishId: string
+        name: string
+        quantify: Decimal
+        unit: string
+        category: CategoryOfIngredient
+      }[]
+    }>
+    createdAt: Date
+  }
+}
 export interface DeleteMealsParams {
   id: string
   menuId: string
